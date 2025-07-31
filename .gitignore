@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+*.log
+
+# Next.js
+.next/
+out/
+build/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Photos and uploads
+bucket/
+!bucket/README.md
+
+# Docker
+docker-data/
+
+# Prisma
+prisma/migrations/
+
+# Credentials
+*key.json
+*credentials*
