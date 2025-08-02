@@ -24,7 +24,7 @@ model User {
 }
 
 model Photo {
-  id           String   @id
+  id           Int      @id @default(autoincrement())
   filename     String
   originalName String
   url          String
@@ -41,7 +41,7 @@ model Photo {
 
 model PhotoSelection {
   id        String   @id
-  photoId   String
+  photoId   Int
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -45,7 +45,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
               ? 'photo-selected'
               : ''
           }`}
-          onClick={() => handlePhotoClick(photo.id)}
+          onClick={() => handlePhotoClick(photo.id.toString())}
         >
           <Image
             src={photo.url}

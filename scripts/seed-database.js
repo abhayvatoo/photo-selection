@@ -66,17 +66,8 @@ async function seedDatabase() {
       const fileStats = fs.statSync(path.join(bucketPath, file));
       const ext = path.extname(file).slice(1).toLowerCase();
       
-      await prisma.photo.upsert({
-        where: { id: `photo-${i + 1}` },
-        update: {
-          filename: file,
-          originalName: file,
-          url: `/api/photos/serve/${file}`,
-          mimeType: `image/${ext}`,
-          size: fileStats.size,
-        },
-        create: {
-          id: `photo-${i + 1}`,
+      await prisma.photo.create({
+        data: {
           filename: file,
           originalName: file,
           url: `/api/photos/serve/${file}`,

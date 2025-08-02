@@ -9,7 +9,7 @@ export interface ApiUser {
 }
 
 export interface ApiPhoto {
-  id: string;
+  id: number;
   filename: string;
   originalName: string;
   url: string;

@@ -202,7 +202,7 @@ class ProductionPhotoStore {
       const result = await apiService.togglePhotoSelection(photoId, this.state.currentUser.id);
       
       // Update local state
-      const photoIndex = this.state.photos.findIndex(p => p.id === photoId);
+      const photoIndex = this.state.photos.findIndex(p => p.id === parseInt(photoId));
       if (photoIndex !== -1) {
         this.state.photos[photoIndex] = result.photo;
       }

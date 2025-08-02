@@ -20,11 +20,20 @@ export async function POST(
       );
     }
 
+    // Convert photoId from string to integer
+    const photoIdInt = parseInt(photoId);
+    if (isNaN(photoIdInt)) {
+      return NextResponse.json(
+        { error: 'Invalid photoId format' },
+        { status: 400 }
+      );
+    }
+
     // Check if selection already exists
     const existingSelection = await prisma.photoSelection.findUnique({
       where: {
         photoId_userId: {
-          photoId,
+          photoId: photoIdInt,
           userId,
         },
       },
@@ -43,7 +52,7 @@ export async function POST(
       await prisma.photoSelection.create({
         data: {
           id: randomUUID(),
-          photoId,
+          photoId: photoIdInt,
           userId,
         },
       });
@@ -52,7 +61,7 @@ export async function POST(
 
     // Get updated photo with selections
     const photo = await prisma.photo.findUnique({
-      where: { id: photoId },
+      where: { id: photoIdInt },
       select: {
         id: true,
         filename: true,
