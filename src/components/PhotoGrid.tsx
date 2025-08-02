@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Photo, User } from '@/types';
-import { photoStore } from '@/lib/store';
+import { ApiPhoto, ApiUser } from '@/lib/api';
+import { productionPhotoStore } from '@/lib/production-store';
 
 interface PhotoGridProps {
-  photos: Photo[];
-  currentUser: User | null;
+  photos: ApiPhoto[];
+  currentUser: ApiUser | null;
 }
 
 export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
-    const unsubscribe = photoStore.subscribe(() => {
+    const unsubscribe = productionPhotoStore.subscribe(() => {
       forceUpdate({});
     });
     return unsubscribe;
@@ -22,13 +22,17 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
 
   const handlePhotoClick = (photoId: string) => {
     if (currentUser) {
-      photoStore.togglePhotoSelection(photoId);
+      productionPhotoStore.togglePhotoSelection(photoId);
     }
   };
 
   const getUserColor = (userId: string): string => {
-    const user = photoStore.getUserById(userId);
+    const user = productionPhotoStore.getUserById(userId);
     return user?.color || '#gray';
+  };
+
+  const isPhotoSelectedByUser = (photo: ApiPhoto, userId: string): boolean => {
+    return photo.selections.some(selection => selection.userId === userId);
   };
 
   return (
@@ -37,7 +41,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
         <div
           key={photo.id}
           className={`photo-card ${
-            currentUser && photo.selectedBy.includes(currentUser.id)
+            currentUser && isPhotoSelectedByUser(photo, currentUser.id)
               ? 'photo-selected'
               : ''
           }`}
@@ -45,23 +49,22 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
         >
           <Image
             src={photo.url}
-            alt={photo.name}
+            alt={photo.filename}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           
           {/* Selection indicators */}
-          {photo.selectedBy.length > 0 && (
+          {photo.selections.length > 0 && (
             <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-              {photo.selectedBy.map((userId) => {
-                const user = photoStore.getUserById(userId);
+              {photo.selections.map((selection) => {
                 return (
                   <div
-                    key={userId}
+                    key={selection.id}
                     className="w-3 h-3 rounded-full border-2 border-white"
-                    style={{ backgroundColor: getUserColor(userId) }}
-                    title={user?.name || 'Unknown User'}
+                    style={{ backgroundColor: selection.user.color }}
+                    title={selection.user.name}
                   />
                 );
               })}
@@ -71,7 +74,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
           {/* Photo name overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <p className="text-white text-sm font-medium truncate">
-              {photo.name}
+              {photo.originalName}
             </p>
           </div>
         </div>

@@ -19,6 +19,12 @@ export default function Home() {
     return unsubscribe;
   }, []);
 
+  // Load initial data from database
+  useEffect(() => {
+    productionPhotoStore.loadUsers();
+    productionPhotoStore.loadPhotos();
+  }, []);
+
   const handleUserSelect = (user: any) => {
     productionPhotoStore.setCurrentUser(user);
   };
@@ -73,7 +79,7 @@ export default function Home() {
             </div>
             <div>
               <p className="text-2xl font-bold text-purple-600">
-                {state.photos.reduce((acc, photo) => acc + photo.selectedBy.length, 0)}
+                {state.photos.reduce((acc, photo) => acc + photo.selections.length, 0)}
               </p>
               <p className="text-gray-600">Total Selections</p>
             </div>

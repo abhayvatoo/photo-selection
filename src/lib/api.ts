@@ -10,19 +10,13 @@ export interface ApiUser {
 
 export interface ApiPhoto {
   id: string;
-  name: string;
   filename: string;
-  gcsUrl: string;
+  originalName: string;
+  url: string;
   mimeType: string;
   size: number;
-  uploadedById: string;
   createdAt: string;
   updatedAt: string;
-  uploadedBy: {
-    id: string;
-    name: string;
-    color: string;
-  };
   selections: Array<{
     id: string;
     userId: string;

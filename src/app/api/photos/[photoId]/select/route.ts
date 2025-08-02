@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { randomUUID } from 'crypto';
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,7 @@ export async function POST(
       // Add selection
       await prisma.photoSelection.create({
         data: {
+          id: randomUUID(),
           photoId,
           userId,
         },
@@ -51,9 +53,20 @@ export async function POST(
     // Get updated photo with selections
     const photo = await prisma.photo.findUnique({
       where: { id: photoId },
-      include: {
+      select: {
+        id: true,
+        filename: true,
+        originalName: true,
+        url: true,
+        mimeType: true,
+        size: true,
+        createdAt: true,
+        updatedAt: true,
         selections: {
-          include: {
+          select: {
+            id: true,
+            userId: true,
+            createdAt: true,
             user: {
               select: {
                 id: true,

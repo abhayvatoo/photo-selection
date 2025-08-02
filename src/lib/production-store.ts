@@ -160,9 +160,7 @@ class ProductionPhotoStore {
     try {
       this.setLoading(true);
       this.setError(null);
-      const photos = await apiService.fetchPhotos(
-        this.state.filterUsers.length > 0 ? this.state.filterUsers : undefined
-      );
+      const photos = await apiService.fetchPhotos();
       this.state.photos = photos;
       this.notify();
     } catch (error) {
@@ -226,12 +224,19 @@ class ProductionPhotoStore {
   setFilterUsers(userIds: string[]) {
     this.state.filterUsers = userIds;
     this.notify();
-    // Reload photos with new filter
-    this.loadPhotos();
+    // No need to reload photos - filtering is done client-side in getFilteredPhotos()
   }
 
   getFilteredPhotos(): ApiPhoto[] {
-    return this.state.photos;
+    if (this.state.filterUsers.length === 0) {
+      return this.state.photos;
+    }
+
+    return this.state.photos.filter(photo =>
+      this.state.filterUsers.some(userId =>
+        photo.selections.some(selection => selection.userId === userId)
+      )
+    );
   }
 
   getUserById(userId: string): ApiUser | undefined {
