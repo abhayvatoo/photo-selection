@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process');
+const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
-const { promisify } = require('util');
 
-const execAsync = promisify(exec);
+const prisma = new PrismaClient();
 
 const sampleUsers = [
   { id: 'user-1', name: 'Alice', color: '#FF6B6B' },
@@ -19,57 +18,21 @@ async function seedDatabase() {
   try {
     console.log('🌱 Starting database seed...');
     
-    // First, create the tables if they don't exist
-    console.log('📋 Creating database tables...');
-    const createTablesSQL = `
-      CREATE TABLE IF NOT EXISTS "User" (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          color TEXT NOT NULL,
-          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE TABLE IF NOT EXISTS "Photo" (
-          id TEXT PRIMARY KEY,
-          filename TEXT NOT NULL,
-          "originalName" TEXT NOT NULL,
-          url TEXT NOT NULL,
-          "mimeType" TEXT NOT NULL,
-          size INTEGER NOT NULL,
-          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE TABLE IF NOT EXISTS "PhotoSelection" (
-          id TEXT PRIMARY KEY,
-          "userId" TEXT NOT NULL,
-          "photoId" TEXT NOT NULL,
-          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT "PhotoSelection_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE ON UPDATE CASCADE,
-          CONSTRAINT "PhotoSelection_photoId_fkey" FOREIGN KEY ("photoId") REFERENCES "Photo"(id) ON DELETE CASCADE ON UPDATE CASCADE
-      );
-      
-      CREATE UNIQUE INDEX IF NOT EXISTS "PhotoSelection_userId_photoId_key" ON "PhotoSelection"("userId", "photoId");
-    `;
-    
-    await execAsync(`docker exec -i photo-selection-db psql -U photo_user -d photo_selection_db -c "${createTablesSQL.replace(/"/g, '\\"')}"`); 
-    console.log('✅ Tables created!');
-    
-    // Create users using direct SQL
+    // Create users using Prisma
     console.log('👥 Creating users...');
-    for (const user of sampleUsers) {
-      const insertUserSQL = `
-        INSERT INTO "User" (id, name, color, "createdAt", "updatedAt") 
-        VALUES ('${user.id}', '${user.name}', '${user.color}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        ON CONFLICT (id) DO UPDATE SET 
-          name = EXCLUDED.name,
-          color = EXCLUDED.color,
-          "updatedAt" = CURRENT_TIMESTAMP;
-      `;
-      
-      await execAsync(`docker exec -i photo-selection-db psql -U photo_user -d photo_selection_db -c "${insertUserSQL.replace(/"/g, '\\"')}"`); 
+    for (const userData of sampleUsers) {
+      await prisma.user.upsert({
+        where: { id: userData.id },
+        update: {
+          name: userData.name,
+          color: userData.color,
+        },
+        create: {
+          id: userData.id,
+          name: userData.name,
+          color: userData.color,
+        },
+      });
     }
     console.log('✅ Users created!');
 
@@ -78,6 +41,7 @@ async function seedDatabase() {
     if (!fs.existsSync(bucketPath)) {
       console.log('⚠️  Bucket folder not found. Creating it...');
       fs.mkdirSync(bucketPath, { recursive: true });
+      console.log('🎉 Database seeding completed (users only)!');
       return;
     }
     
@@ -96,25 +60,30 @@ async function seedDatabase() {
     console.log(`📸 Found ${photoFiles.length} photos in bucket folder`);
     console.log('Creating photo records...');
 
-    // Create photo records using direct SQL
+    // Create photo records using Prisma
     for (let i = 0; i < photoFiles.length; i++) {
       const file = photoFiles[i];
       const fileStats = fs.statSync(path.join(bucketPath, file));
       const ext = path.extname(file).slice(1).toLowerCase();
       
-      const insertPhotoSQL = `
-        INSERT INTO "Photo" (id, filename, "originalName", url, "mimeType", size, "createdAt", "updatedAt") 
-        VALUES ('photo-${i + 1}', '${file}', '${file}', '/api/photos/serve/${file}', 'image/${ext}', ${fileStats.size}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        ON CONFLICT (id) DO UPDATE SET 
-          filename = EXCLUDED.filename,
-          "originalName" = EXCLUDED."originalName",
-          url = EXCLUDED.url,
-          "mimeType" = EXCLUDED."mimeType",
-          size = EXCLUDED.size,
-          "updatedAt" = CURRENT_TIMESTAMP;
-      `;
-      
-      await execAsync(`docker exec -i photo-selection-db psql -U photo_user -d photo_selection_db -c "${insertPhotoSQL.replace(/"/g, '\\"')}"`); 
+      await prisma.photo.upsert({
+        where: { id: `photo-${i + 1}` },
+        update: {
+          filename: file,
+          originalName: file,
+          url: `/api/photos/serve/${file}`,
+          mimeType: `image/${ext}`,
+          size: fileStats.size,
+        },
+        create: {
+          id: `photo-${i + 1}`,
+          filename: file,
+          originalName: file,
+          url: `/api/photos/serve/${file}`,
+          mimeType: `image/${ext}`,
+          size: fileStats.size,
+        },
+      });
     }
     
     console.log('✅ Photos created!');
@@ -124,6 +93,8 @@ async function seedDatabase() {
   } catch (error) {
     console.error('❌ Error during seeding:', error.message);
     process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

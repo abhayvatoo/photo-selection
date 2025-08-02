@@ -6,19 +6,23 @@ A collaborative Next.js application for multi-user photo selection with real-tim
 
 ### Option 1: Development with Local Storage (Fastest)
 ```bash
-# 1. Start Docker database
-npm run docker:dev
+# 1. Setup database schema (PostgreSQL must be running locally)
+npm run db:push
 
-# 2. Start development server
+# 2. Seed with sample data
+npm run db:seed
+
+# 3. Start development server
 npm run dev
 
-# 3. Open http://localhost:3000
+# 4. Open http://localhost:3000
 ```
 
-### Option 2: Production with Docker
+### Option 2: Production Setup
 ```bash
-# Build and start all services
-npm run docker:prod
+# Build production version
+npm run build
+npm start
 
 # Open http://localhost:3000
 ```
@@ -30,21 +34,19 @@ npm run docker:prod
 - ✅ **Smart filtering** - Filter photos by specific users' selections
 - ✅ **Photo upload** - Upload multiple photos with drag-and-drop
 - ✅ **Responsive design** - Works on desktop and mobile
-- ✅ **Production ready** - PostgreSQL, GCS, Docker support
+- ✅ **Production ready** - PostgreSQL, GCS support
 
 ## 🏗️ Architecture
 
 ### Development Mode (`npm run dev`)
-- **Frontend**: Next.js with React hooks and Tailwind CSS
-- **Storage**: Hybrid system (GCS or local file storage)
-- **Database**: PostgreSQL in Docker container
-- **Real-time**: Socket.io for live updates
+- **Frontend**: Next.js development server
+- **Storage**: Local storage (bucket folder)
+- **Database**: Local PostgreSQL
 
-### Production Mode (`npm run docker:prod`)
+### Production Mode (`npm run build && npm start`)
 - **Frontend**: Optimized Next.js build
 - **Storage**: Google Cloud Storage (recommended) or local storage
-- **Database**: PostgreSQL in Docker
-- **Cache**: Redis for sessions
+- **Database**: Local PostgreSQL
 - **Real-time**: Socket.io server
 
 ## 📦 Storage Options
@@ -65,7 +67,7 @@ npm run docker:prod
 
 ### Prerequisites
 - Node.js 18+
-- Docker Desktop
+
 - (Optional) Google Cloud account for GCS
 
 ### 1. Install Dependencies
@@ -77,8 +79,8 @@ npm install
 Copy `.env.example` to `.env.local` and configure:
 
 ```bash
-# Database (Docker PostgreSQL)
-DATABASE_URL="postgresql://photo_user:photo_password@localhost:5432/photo_selection_db"
+# Database (Local PostgreSQL)
+DATABASE_URL="postgresql://your_username@localhost:5432/photo_selection_db"
 
 # Google Cloud Storage (optional)
 GOOGLE_CLOUD_PROJECT_ID="your-project-id"
@@ -89,30 +91,24 @@ GOOGLE_APPLICATION_CREDENTIALS="./gcs-service-account.json"
 JWT_SECRET="your-super-secret-jwt-key"
 ```
 
-### 3. Start Database
+### 3. Setup Database
 ```bash
-npm run docker:dev
-```
+# Create database (PostgreSQL must be running locally)
+createdb photo_selection_db
 
-This will:
-- Start PostgreSQL in Docker
-- Run database migrations
-- Seed with sample data
-- Show helpful commands
+# Apply database schema
+npm run db:push
+
+# Seed with sample data
+npm run db:seed
+```
 
 ### 4. Start Development Server
 ```bash
 npm run dev
 ```
 
-## 🐳 Docker Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run docker:dev` | Start development database |
-| `npm run docker:prod` | Start full production environment |
-| `npm run docker:stop` | Stop development containers |
-| `npm run docker:logs` | View container logs |
 
 ## 📊 Database Commands
 
@@ -163,7 +159,7 @@ npm run dev
 │   │   └── db.ts          # Database connection
 │   └── types/             # TypeScript definitions
 ├── prisma/                # Database schema and migrations
-├── docker/                # Docker configuration
+
 ├── scripts/               # Setup scripts
 └── docs/                  # Documentation
 ```
@@ -173,13 +169,13 @@ npm run dev
 ### Local Production Test
 ```bash
 npm run build
-npm run docker:prod
+npm run build && npm start
 ```
 
 ### Cloud Deployment
 1. Set up Google Cloud Storage (see `docs/GCS_SETUP.md`)
 2. Configure environment variables
-3. Use Docker Compose for container orchestration
+3. Use local PostgreSQL for database
 4. Deploy to your preferred cloud platform
 
 ## 🐛 Troubleshooting
@@ -187,11 +183,44 @@ npm run docker:prod
 ### Database Connection Issues
 ```bash
 # Check if database is running
-docker ps
+# Check PostgreSQL status
+ps aux | grep postgres
 
 # Restart database
-npm run docker:stop
-npm run docker:dev
+# Restart PostgreSQL if needed
+brew services restart postgresql@15
+```
+
+### PostgreSQL Authentication Issues
+
+If you encounter `P1010: User 'photo_user' was denied access` errors with Prisma:
+
+**Problem**: Even when the PostgreSQL user has correct privileges, Prisma may fail to connect due to PostgreSQL's Host-Based Authentication (`pg_hba.conf`) configuration.
+
+**Solution**: The project includes a custom `pg_hba.conf` file that allows trusted localhost connections:
+
+```bash
+# The error typically looks like:
+# Error: P1010: User `photo_user` was denied access on the database `photo_selection_db.public`
+
+# This is resolved by our custom pg_hba.conf which includes:
+# host    all    all    127.0.0.1/32    trust
+# host    all    all    localhost       trust
+```
+
+**Technical Details**:
+- `pg_hba.conf` controls **authentication** (who can connect)
+- User privileges control **authorization** (what they can do after connecting)
+- Local PostgreSQL uses system authentication by default
+- Our configuration allows trusted connections from localhost for development
+
+**If you still have issues**:
+```bash
+# Recreate database with fresh configuration
+# Using local PostgreSQL - no Docker cleanup needed
+
+# Test connection
+npm run db:push
 ```
 
 ### Storage Issues
@@ -200,7 +229,8 @@ npm run docker:dev
 curl http://localhost:3000/api/storage/status
 
 # View logs
-npm run docker:logs
+# Check PostgreSQL logs
+tail -f /opt/homebrew/var/log/postgresql@15.log
 ```
 
 ### Build Issues
