@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
+    "clean": "rm -rf node_modules package-lock.json",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:reset": "node scripts/db-reset.js",
     "db:seed:users": "node scripts/seed-users.js",
     "db:seed:photos": "node scripts/seed-photos.js"
   },

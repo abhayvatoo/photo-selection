@@ -117,7 +117,66 @@ npm run dev
 | `npm run db:generate` | Generate Prisma client |
 | `npm run db:push` | Push schema to database |
 | `npm run db:migrate` | Create and run migrations |
-| `npm run db:seed` | Seed database with sample data |
+| `npm run db:reset` | Drop all tables and data ⚠️ |
+| `npm run db:seed:users` | Seed users only |
+| `npm run db:seed:photos` | Seed photos only |
+| `npm run clean` | Remove node_modules and package-lock.json |
+
+## 🗑️ Database Reset & Fresh Setup
+
+### Reset Database (Drop All Tables)
+```bash
+npm run db:reset
+```
+⚠️ **WARNING**: This deletes ALL data permanently!
+
+### Complete Fresh Setup
+For a complete fresh start with clean data:
+```bash
+# 1. Drop all tables
+npm run db:reset
+
+# 2. Recreate schema
+npm run db:push
+
+# 3. Seed users first (required before photos)
+npm run db:seed:users
+
+# 4. Seed photos
+npm run db:seed:photos
+```
+
+### Creating New Database from Scratch
+If you want to create a completely new database:
+
+1. **Connect to PostgreSQL:**
+   ```bash
+   psql postgresql://abhayvatoo@localhost:5432/postgres
+   ```
+
+2. **Drop existing database (if needed):**
+   ```sql
+   DROP DATABASE IF EXISTS photo_selection_db;
+   ```
+
+3. **Create new database:**
+   ```sql
+   CREATE DATABASE photo_selection_db;
+   \q
+   ```
+
+4. **Setup fresh database:**
+   ```bash
+   npm run db:push
+   npm run db:seed:users
+   npm run db:seed:photos
+   ```
+
+### Data Overview
+After seeding, you'll have:
+- **5 users** with names, emails, and avatar URLs
+- **11+ photos** (depends on files in `bucket/` folder)
+- **Clean database** with auto-increment IDs and proper relationships
 
 ## 🔧 Development Workflow
 
