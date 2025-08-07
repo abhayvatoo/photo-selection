@@ -52,6 +52,46 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
     return photo.selections.some(selection => selection.userId === userId);
   };
 
+  // Show guidance message when no user is selected
+  if (!currentUser && photos.length > 0) {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+        <div className="flex items-center justify-center mb-3">
+          <svg className="w-8 h-8 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-blue-800">Select Your Identity First</h3>
+        </div>
+        <p className="text-blue-700 mb-4">
+          To select photos, please choose your identity from the "Select Your Identity" section above.
+        </p>
+        <p className="text-sm text-blue-600">
+          Once selected, you'll see select buttons on each photo to mark your choices.
+        </p>
+      </div>
+    );
+  }
+
+  // Show guidance message when no user is selected
+  if (!currentUser && photos.length > 0) {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+        <div className="flex items-center justify-center mb-3">
+          <svg className="w-8 h-8 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-blue-800">Select Your Identity First</h3>
+        </div>
+        <p className="text-blue-700 mb-4">
+          To select photos, please choose your identity from the "Select Your Identity" section above.
+        </p>
+        <p className="text-sm text-blue-600">
+          Once selected, you'll see select buttons on each photo to mark your choices.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="photo-grid">
@@ -101,16 +141,17 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
             </div>
           )}
 
-          {/* Select/Unselect Button - Simple and Always Visible */}
+          {/* Select/Unselect Button - Enhanced UX */}
           {currentUser && (
             <button
               onClick={(e) => handleSelectToggle(photo.id, e)}
-              className={`absolute bottom-2 right-2 w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-20 ${
+              className={`absolute bottom-2 right-2 w-8 h-8 md:w-7 md:h-7 rounded-full border-2 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
                 isPhotoSelectedByUser(photo, currentUser.id)
-                  ? 'bg-green-500 text-white'
-                  : 'bg-white bg-opacity-90 text-gray-600 hover:bg-white'
+                  ? 'bg-green-500 text-white border-green-600 hover:bg-green-600'
+                  : 'bg-blue-100 text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
               title={isPhotoSelectedByUser(photo, currentUser.id) ? 'Unselect photo' : 'Select photo'}
+              aria-label={isPhotoSelectedByUser(photo, currentUser.id) ? 'Unselect photo' : 'Select photo'}
             >
               {isPhotoSelectedByUser(photo, currentUser.id) ? (
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

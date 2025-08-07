@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
-import { Upload, Plus } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Upload, Plus, CheckCircle } from 'lucide-react';
 import { photoStore } from '@/lib/store';
 
 interface PhotoUploadProps {
@@ -10,24 +10,37 @@ interface PhotoUploadProps {
 
 export default function PhotoUpload({ onUpload }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (file.type.startsWith('image/')) {
-        await photoStore.addPhoto(file);
+    setIsUploading(true);
+    setUploadSuccess(false);
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          await photoStore.addPhoto(file);
+        }
       }
-    }
 
-    // Reset the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+      // Reset the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
-    onUpload?.();
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
+      onUpload?.();
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleClick = () => {
@@ -43,11 +56,32 @@ export default function PhotoUpload({ onUpload }: PhotoUploadProps) {
       
       <button
         onClick={handleClick}
-        className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+        disabled={isUploading}
+        className={`w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+          isUploading
+            ? 'border-blue-300 bg-blue-50 cursor-not-allowed'
+            : uploadSuccess
+            ? 'border-green-300 bg-green-50 hover:border-green-400'
+            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+        }`}
       >
         <div className="flex flex-col items-center gap-2">
-          <Plus className="w-8 h-8 text-gray-400" />
-          <p className="text-gray-600 font-medium">Click to upload photos</p>
+          {isUploading ? (
+            <>
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-blue-600 font-medium">Uploading photos...</p>
+            </>
+          ) : uploadSuccess ? (
+            <>
+              <CheckCircle className="w-8 h-8 text-green-500" />
+              <p className="text-green-600 font-medium">Photos uploaded successfully!</p>
+            </>
+          ) : (
+            <>
+              <Plus className="w-8 h-8 text-gray-400" />
+              <p className="text-gray-600 font-medium">Click to upload photos</p>
+            </>
+          )}
           <p className="text-sm text-gray-500">Supports multiple file selection</p>
         </div>
       </button>

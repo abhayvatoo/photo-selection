@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { X } from 'lucide-react';
 import { ApiPhoto, ApiUser } from '@/lib/api';
 import { productionPhotoStore } from '@/lib/production-store';
 
@@ -64,28 +65,32 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
   if (!isOpen || !currentPhoto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 text-white hover:text-gray-300 transition-colors"
+        className="absolute top-4 right-4 z-10 p-2 text-white hover:text-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
         aria-label="Close image"
       >
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X className="w-8 h-8" />
       </button>
 
-      {/* Select/Unselect Button */}
+      {/* Select/Unselect Button - Enhanced */}
       {currentUser && (
         <button
           onClick={(e) => handleSelectToggle(currentPhoto.id, e)}
-          className={`absolute top-4 left-4 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-10 ${
+          className={`absolute top-4 left-4 w-14 h-14 md:w-12 md:h-12 rounded-full border-2 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-10 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
             isPhotoSelectedByUser(currentPhoto, currentUser.id)
-              ? 'bg-green-500 text-white'
-              : 'bg-white bg-opacity-90 text-gray-600 hover:bg-white'
+              ? 'bg-green-500 text-white border-green-600 hover:bg-green-600'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
           }`}
           title={isPhotoSelectedByUser(currentPhoto, currentUser.id) ? 'Unselect photo' : 'Select photo'}
+          aria-label={isPhotoSelectedByUser(currentPhoto, currentUser.id) ? 'Unselect photo' : 'Select photo'}
         >
           {isPhotoSelectedByUser(currentPhoto, currentUser.id) ? (
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -99,7 +104,7 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
         </button>
       )}
 
-      {/* Image container */}
+      {/* Image */}
       <div className="relative max-w-[90vw] max-h-[90vh] w-full h-full flex items-center justify-center">
         <Image
           src={currentPhoto.url}
