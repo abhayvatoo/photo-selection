@@ -233,7 +233,7 @@ class ProductionPhotoStore {
     }
 
     return this.state.photos.filter(photo =>
-      this.state.filterUsers.some(userId =>
+      this.state.filterUsers.every(userId =>
         photo.selections.some(selection => selection.userId === userId)
       )
     );
