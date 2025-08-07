@@ -58,7 +58,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
         {photos.map((photo) => (
           <div
             key={photo.id}
-            className={`photo-card cursor-pointer ${
+            className={`photo-card cursor-pointer group ${
               currentUser && isPhotoSelectedByUser(photo, currentUser.id)
                 ? 'photo-selected'
                 : ''
@@ -101,22 +101,28 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
             </div>
           )}
 
-          {/* Select/Unselect Button - Always Visible for Debug */}
-          <button
-            onClick={(e) => handleSelectToggle(photo.id, e)}
-            className="absolute bottom-2 right-2 w-12 h-12 rounded-full border-4 border-red-500 shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 z-50 bg-red-500 text-white"
-            title="Select/Unselect photo"
-          >
-            {currentUser && isPhotoSelectedByUser(photo, currentUser.id) ? (
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            )}
-          </button>
+          {/* Select/Unselect Button - Simple and Always Visible */}
+          {currentUser && (
+            <button
+              onClick={(e) => handleSelectToggle(photo.id, e)}
+              className={`absolute bottom-2 right-2 w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 z-20 ${
+                isPhotoSelectedByUser(photo, currentUser.id)
+                  ? 'bg-green-500 text-white'
+                  : 'bg-white bg-opacity-90 text-gray-600 hover:bg-white'
+              }`}
+              title={isPhotoSelectedByUser(photo, currentUser.id) ? 'Unselect photo' : 'Select photo'}
+            >
+              {isPhotoSelectedByUser(photo, currentUser.id) ? (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              )}
+            </button>
+          )}
 
           </div>
         ))}
