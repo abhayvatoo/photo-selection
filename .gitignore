@@ -37,3 +37,6 @@ prisma/migrations/
 # Credentials
 *key.json
 *credentials*
+
+# TypeScript build cache
+*.tsbuildinfo
