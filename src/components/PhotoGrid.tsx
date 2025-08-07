@@ -133,6 +133,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
         photo={selectedPhoto}
         isOpen={isModalOpen}
         onClose={closeModal}
+        currentUser={currentUser}
       />
     </>
   );
