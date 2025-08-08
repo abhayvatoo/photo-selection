@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { SessionProvider } from '@/components/providers/SessionProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Photo Selection App',
-  description: 'Multi-user photo selection and filtering app',
+  title: 'Photo Selection SaaS',
+  description: 'Multi-tenant photo selection platform for photographers and clients',
 }
 
 export default function RootLayout({
@@ -16,7 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <SessionProvider>
+          {children}
+        </SessionProvider>
+      </body>
     </html>
   )
 }
