@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ApiPhoto, ApiUser } from '@/lib/api';
 import { productionPhotoStore } from '@/lib/production-store';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import ImageModal from './ImageModal';
 
 // Simple placeholder image as base64 data URL
@@ -15,62 +16,51 @@ interface PhotoGridProps {
 }
 
 export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
-  const [, forceUpdate] = useState({});
   const [selectedPhoto, setSelectedPhoto] = useState<ApiPhoto | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [state, setState] = useState(productionPhotoStore.getState());
 
+  // Subscribe to store updates
   useEffect(() => {
     const unsubscribe = productionPhotoStore.subscribe(() => {
-      forceUpdate({});
+      setState(productionPhotoStore.getState());
     });
     return unsubscribe;
   }, []);
+
+  // Infinite scroll hook
+  const { loadingRef } = useInfiniteScroll({
+    hasMore: state.hasMorePhotos,
+    isLoading: state.isLoadingMore,
+    onLoadMore: () => productionPhotoStore.loadMorePhotos(),
+    threshold: 200 // Load more when 200px from bottom
+  });
 
   const handlePhotoClick = (photo: ApiPhoto) => {
     setSelectedPhoto(photo);
     setIsModalOpen(true);
   };
 
-  const handleSelectToggle = (photoId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent opening modal when clicking select button
-    if (currentUser) {
-      productionPhotoStore.togglePhotoSelection(photoId.toString());
-    }
-  };
-
-  const closeModal = () => {
+  const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedPhoto(null);
   };
 
-  const getUserColor = (userId: string): string => {
-    const user = productionPhotoStore.getUserById(userId);
-    return user?.color || '#gray';
+  const handleSelectToggle = (photoId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentUser) {
+      productionPhotoStore.togglePhotoSelection(photoId.toString());
+    }
   };
 
   const isPhotoSelectedByUser = (photo: ApiPhoto, userId: string): boolean => {
     return photo.selections.some(selection => selection.userId === userId);
   };
 
-  // Show guidance message when no user is selected
-  if (!currentUser && photos.length > 0) {
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-        <div className="flex items-center justify-center mb-3">
-          <svg className="w-8 h-8 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-lg font-semibold text-blue-800">Select Your Identity First</h3>
-        </div>
-        <p className="text-blue-700 mb-4">
-          To select photos, please choose your identity from the "Select Your Identity" section above.
-        </p>
-        <p className="text-sm text-blue-600">
-          Once selected, you'll see select buttons on each photo to mark your choices.
-        </p>
-      </div>
-    );
-  }
+  const getUserColor = (userId: string): string => {
+    const user = productionPhotoStore.getUserById(userId);
+    return user?.color || '#gray';
+  };
 
   // Show guidance message when no user is selected
   if (!currentUser && photos.length > 0) {
@@ -168,12 +158,40 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
           </div>
         ))}
       </div>
+
+      {/* Infinite Scroll Loading Indicator */}
+      {state.hasMorePhotos && (
+        <div 
+          ref={loadingRef}
+          className="flex justify-center items-center py-8"
+        >
+          {state.isLoadingMore ? (
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-600">Loading more photos...</span>
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm">
+              Scroll down to load more photos
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* End of photos indicator */}
+      {!state.hasMorePhotos && photos.length > 0 && (
+        <div className="text-center py-8">
+          <div className="text-gray-500 text-sm">
+            🎉 You've reached the end! No more photos to load.
+          </div>
+        </div>
+      )}
       
       {/* Full-screen Image Modal */}
       <ImageModal 
         photo={selectedPhoto}
         isOpen={isModalOpen}
-        onClose={closeModal}
+        onClose={handleCloseModal}
         currentUser={currentUser}
       />
     </>

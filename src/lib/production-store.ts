@@ -12,6 +12,12 @@ export interface ProductionAppState {
   loading: boolean;
   error: string | null;
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+  // Pagination state
+  currentPage: number;
+  pageSize: number;
+  hasMorePhotos: boolean;
+  isLoadingMore: boolean;
+  totalPhotos: number;
 }
 
 class ProductionPhotoStore {
@@ -23,6 +29,12 @@ class ProductionPhotoStore {
     loading: false,
     error: null,
     socket: null,
+    // Pagination state
+    currentPage: 1,
+    pageSize: 30, // Mobile-optimized: 30 photos initial load
+    hasMorePhotos: true,
+    isLoadingMore: false,
+    totalPhotos: 0,
   };
 
   private listeners: Set<() => void> = new Set();
@@ -81,7 +93,7 @@ class ProductionPhotoStore {
     userName: string;
     selected: boolean;
   }) {
-    const photoIndex = this.state.photos.findIndex(p => p.id === data.photoId);
+    const photoIndex = this.state.photos.findIndex(p => p.id === parseInt(data.photoId));
     if (photoIndex === -1) return;
 
     const photo = { ...this.state.photos[photoIndex] };
@@ -241,6 +253,54 @@ class ProductionPhotoStore {
 
   getUserById(userId: string): ApiUser | undefined {
     return this.state.users.find(user => user.id === userId);
+  }
+
+  // Pagination methods
+  async loadMorePhotos(): Promise<void> {
+    if (this.state.isLoadingMore || !this.state.hasMorePhotos) {
+      return;
+    }
+
+    this.state.isLoadingMore = true;
+    this.listeners.forEach(listener => listener());
+
+    try {
+      const nextPage = this.state.currentPage + 1;
+      const response = await fetch(`/api/photos?page=${nextPage}&limit=${this.state.pageSize}&filterUsers=${this.state.filterUsers.join(',')}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load more photos');
+      }
+
+      const data = await response.json();
+      
+      // Append new photos to existing ones
+      this.state.photos = [...this.state.photos, ...data.photos];
+      this.state.currentPage = nextPage;
+      this.state.totalPhotos = data.total;
+      this.state.hasMorePhotos = this.state.photos.length < data.total;
+      
+    } catch (error) {
+      console.error('Failed to load more photos:', error);
+      this.state.error = error instanceof Error ? error.message : 'Failed to load more photos';
+    } finally {
+      this.state.isLoadingMore = false;
+      this.listeners.forEach(listener => listener());
+    }
+  }
+
+  resetPagination(): void {
+    this.state.currentPage = 1;
+    this.state.hasMorePhotos = true;
+    this.state.isLoadingMore = false;
+    this.state.photos = [];
+    this.listeners.forEach(listener => listener());
+  }
+
+  getPaginatedPhotos(): ApiPhoto[] {
+    // Return filtered photos for current pagination state
+    const filteredPhotos = this.getFilteredPhotos();
+    return filteredPhotos;
   }
 }
 
