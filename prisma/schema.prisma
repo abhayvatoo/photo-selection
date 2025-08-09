@@ -52,9 +52,10 @@ model VerificationToken {
 
 // Custom Models for Multi-tenant SaaS
 enum UserRole {
-  ADMIN
-  PHOTOGRAPHER
-  CLIENT
+  SUPER_ADMIN     // SaaS platform owner - sees all businesses, analytics, subscriptions
+  BUSINESS_OWNER  // Photographers who purchase the tool - manage workspaces/clients and assign staff
+  STAFF           // Staff/employees of business owners - limited access to only assigned workspaces  
+  USER            // End customers - view/select photos in their workspace
 }
 
 enum WorkspaceStatus {
@@ -69,7 +70,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(CLIENT)
+  role          UserRole  @default(USER)
   color         String    @default("#3B82F6")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

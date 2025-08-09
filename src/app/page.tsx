@@ -8,18 +8,8 @@ import { redirect } from 'next/navigation';
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
-  // Auto-redirect authenticated users based on their role
-  if (session?.user?.id) {
-    const userRole = (session.user as any)?.role;
-    
-    if (userRole === 'ADMIN') {
-      redirect('/admin');
-    } else if (userRole === 'PHOTOGRAPHER') {
-      redirect('/photographer');
-    }
-    // For CLIENT users, they can access the homepage and navigate to their workspace
-    // The workspace assignment will be handled by the admin
-  }
+  // Allow all users to access homepage - no forced redirects
+  // Users can navigate to their dashboards via navigation menu
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">

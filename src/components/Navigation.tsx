@@ -3,7 +3,6 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Camera, Settings, Users, LogOut, User } from 'lucide-react';
-import { UserRole } from '@prisma/client';
 
 export function Navigation() {
   const { data: session, status } = useSession();
@@ -48,8 +47,10 @@ export function Navigation() {
   }
 
   const user = session.user;
-  const canUpload = user.role === UserRole.ADMIN || user.role === UserRole.PHOTOGRAPHER;
-  const isAdmin = user.role === UserRole.ADMIN;
+  const canUpload = user.role === 'BUSINESS_OWNER' || user.role === 'STAFF';
+  const isSuperAdmin = user.role === 'SUPER_ADMIN';
+  const isBusinessOwner = user.role === 'BUSINESS_OWNER';
+  const isStaff = user.role === 'STAFF';
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -64,24 +65,44 @@ export function Navigation() {
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-4">
-              {user.workspaceSlug && (
+              {/* Dashboard Links - Always show appropriate dashboard */}
+              {isSuperAdmin && (
                 <Link
-                  href={`/workspace/${user.workspaceSlug}`}
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  href="/super-admin"
+                  className="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  Photos
+                  <Settings className="h-4 w-4 mr-1" />
+                  Platform
                 </Link>
               )}
-
-
-
-              {isAdmin && (
+              
+              {isBusinessOwner && (
                 <Link
                   href="/admin"
                   className="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <Settings className="h-4 w-4 mr-1" />
-                  Admin
+                  Business
+                </Link>
+              )}
+              
+              {isStaff && (
+                <Link
+                  href="/staff"
+                  className="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  <Camera className="h-4 w-4 mr-1" />
+                  Dashboard
+                </Link>
+              )}
+
+              {/* Workspace Link - Show if user has workspace access */}
+              {user.workspaceSlug && (
+                <Link
+                  href={`/workspace/${user.workspaceSlug}`}
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  My Workspace
                 </Link>
               )}
             </div>
@@ -98,15 +119,17 @@ export function Navigation() {
               </div>
             )}
 
-            {/* Role badge - only show for admin and photographer */}
-            {(user.role === UserRole.ADMIN || user.role === UserRole.PHOTOGRAPHER) && (
+            {/* Role badge - only show for super admin, business owner, and staff */}
+            {(isSuperAdmin || isBusinessOwner || isStaff) && (
               <div className="hidden sm:flex items-center">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  user.role === UserRole.ADMIN 
+                  isSuperAdmin 
+                    ? 'bg-purple-100 text-purple-800'
+                    : isBusinessOwner
                     ? 'bg-red-100 text-red-800'
                     : 'bg-blue-100 text-blue-800'
                 }`}>
-                  {user.role.toLowerCase()}
+                  {isSuperAdmin ? 'platform' : isBusinessOwner ? 'business' : 'staff'}
                 </span>
               </div>
             )}

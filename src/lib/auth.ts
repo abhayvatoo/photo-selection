@@ -77,14 +77,14 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async signIn({ user, account, profile }) {
-      // Make first user an admin
+      // Make first user a super admin (platform owner)
       if (account?.provider === "google" || account?.provider === "email") {
         const userCount = await prisma.user.count();
         if (userCount === 1) {
-          // First user becomes admin
+          // First user becomes super admin (platform owner)
           await prisma.user.update({
             where: { id: user.id },
-            data: { role: "ADMIN" },
+            data: { role: "SUPER_ADMIN" },
           });
         }
       }
