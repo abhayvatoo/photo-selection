@@ -1,8 +1,10 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
-import { redirect } from 'next/navigation';
-import { Camera, Users, Calendar, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, Download, Eye, Heart, Camera, Users, Calendar } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { Navigation } from '@/components/Navigation';
 
 interface WorkspacePageProps {
   params: {
@@ -78,7 +80,10 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      <Navigation />
+      <div style={{ paddingTop: '64px' }}> {/* Add padding for fixed navbar (16 * 4 = 64px) */}
+      
+      {/* Workspace Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -88,22 +93,11 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                 className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
               >
                 <ArrowLeft className="h-5 w-5 mr-1" />
-                Back
+                Back to Dashboard
               </a>
               <h1 className="text-xl font-semibold text-gray-900">
                 {workspace.name}
               </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                {session.user.email}
-              </span>
-              <a
-                href="/api/auth/signout"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </a>
             </div>
           </div>
         </div>
@@ -217,6 +211,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           </div>
         )}
       </div>
+      </div> {/* Close padding wrapper */}
     </div>
   );
 }

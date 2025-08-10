@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
+import { Navigation } from '@/components/Navigation';
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
@@ -21,53 +22,9 @@ export default async function HomePage() {
         }}></div>
       </div>
 
-      {/* Navigation */}
-      <nav className="relative z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Camera className="h-8 w-8 text-black" />
-              <span className="text-xl font-bold text-black">PhotoSelect</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              {session?.user ? (
-                <>
-                  <span className="text-gray-600 text-sm">
-                    Welcome, {session.user.name || session.user.email}
-                  </span>
-                  <Link
-                    href="/dashboard"
-                    className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/api/auth/signout"
-                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    Sign Out
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/signin"
-                    className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/auth/signin"
-                    className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Sticky Navigation */}
+      <Navigation />
+      <div style={{ paddingTop: '64px' }}> {/* Add padding for fixed navbar */}
 
       {/* Hero Section */}
       <section className="relative z-10">
@@ -454,6 +411,7 @@ export default async function HomePage() {
           </div>
         </div>
       </footer>
+      </div> {/* Close the padding div */}
     </div>
   );
 }

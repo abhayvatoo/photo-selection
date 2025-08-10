@@ -49,11 +49,14 @@ export function initializeSocket(httpServer: HTTPServer) {
 
     socket.on('selectPhoto', async ({ photoId, userId }) => {
       try {
+        // Convert photoId to number since Photo model uses Int
+        const photoIdInt = parseInt(photoId);
+        
         // Check if selection already exists
         const existingSelection = await prisma.photoSelection.findUnique({
           where: {
             photoId_userId: {
-              photoId,
+              photoId: photoIdInt,
               userId,
             },
           },
@@ -71,7 +74,7 @@ export function initializeSocket(httpServer: HTTPServer) {
           // Add selection
           await prisma.photoSelection.create({
             data: {
-              photoId,
+              photoId: photoIdInt,
               userId,
             },
           });

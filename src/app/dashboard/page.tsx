@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth-utils';
 import { canUploadPhotos, canManageWorkspaces, canAccessWorkspace } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
 import { UserRole, WorkspaceStatus } from '@prisma/client';
+import { Navigation } from '@/components/Navigation';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -86,32 +87,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Link href="/" className="flex items-center space-x-2">
-                <Camera className="h-8 w-8 text-blue-600" />
-                <span className="text-xl font-bold text-gray-900">PhotoSelect</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-600 text-sm">
-                {user.name || user.email}
-              </span>
-              <Link
-                href="/api/auth/signout"
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-              >
-                Sign Out
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Navigation />
+      <div style={{ paddingTop: '64px' }}> {/* Add padding for fixed navbar (16 * 4 = 64px) */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -216,23 +194,7 @@ export default async function DashboardPage() {
             </Link>
           )}
 
-          {/* Upload Photos */}
-          {canUpload && (
-            <Link
-              href="/upload"
-              className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow group"
-            >
-              <div className="flex items-center mb-4">
-                <div className="bg-green-100 p-3 rounded-lg group-hover:bg-green-200 transition-colors">
-                  <Upload className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 ml-3">Upload Photos</h3>
-              </div>
-              <p className="text-gray-600">
-                Add new photos to your workspace
-              </p>
-            </Link>
-          )}
+
 
 
 
@@ -355,7 +317,8 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
-      </main>
+        </main>
+      </div> {/* Close padding wrapper */}
     </div>
   );
 }

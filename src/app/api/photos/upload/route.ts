@@ -10,10 +10,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const userId = formData.get('userId') as string;
+    const workspaceId = formData.get('workspaceId') as string;
 
-    if (!file || !userId) {
+    if (!file || !userId || !workspaceId) {
       return NextResponse.json(
-        { error: 'File and userId are required' },
+        { error: 'File, userId, and workspaceId are required' },
         { status: 400 }
       );
     }
@@ -28,12 +29,13 @@ export async function POST(request: NextRequest) {
     // Save photo metadata to database
     const photo = await prisma.photo.create({
       data: {
-        name: file.name,
+        originalName: file.name,
         filename: uploadResult.filename,
-        gcsUrl: uploadResult.publicUrl,
+        url: uploadResult.publicUrl,
         mimeType: file.type,
         size: uploadResult.size,
         uploadedById: userId,
+        workspaceId: workspaceId,
       },
       include: {
         uploadedBy: {

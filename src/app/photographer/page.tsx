@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { Camera, Users, Upload, Eye } from 'lucide-react';
+import { Navigation } from '@/components/Navigation';
 
 export default async function PhotographerDashboard() {
   const session = await getServerSession(authOptions);
@@ -61,30 +62,9 @@ export default async function PhotographerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Camera className="h-8 w-8 text-blue-500 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                Photographer Dashboard
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                {session.user.email}
-              </span>
-              <a
-                href="/api/auth/signout"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Sticky Navigation */}
+      <Navigation />
+      <div style={{ paddingTop: '64px' }}> {/* Add padding for fixed navbar */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
@@ -194,6 +174,7 @@ export default async function PhotographerDashboard() {
           )}
         </div>
       </div>
+      </div> {/* Close the padding div */}
     </div>
   );
 }
