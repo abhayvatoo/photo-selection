@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
     }),
     EmailProvider({
       server: process.env.NODE_ENV === 'development' 
-        ? "smtp://test:test@localhost:587"
+        ? undefined  // Don't specify server in development to trigger sendVerificationRequest
         : {
             host: process.env.EMAIL_SERVER_HOST,
             port: process.env.EMAIL_SERVER_PORT,
@@ -36,6 +36,8 @@ export const authOptions: NextAuthOptions = {
           },
       from: process.env.EMAIL_FROM || 'noreply@photoselect.dev',
       async sendVerificationRequest({ identifier, url, provider }) {
+        console.log('🔍 sendVerificationRequest called with:', { identifier, url: url.substring(0, 50) + '...' });
+        
         if (process.env.NODE_ENV === 'development') {
           console.log('\n🔗 MAGIC LINK FOR DEVELOPMENT:');
           console.log(`📧 Email: ${identifier}`);
@@ -54,17 +56,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       // Store user info and role in token
-      if (account && user) {
-        // Fetch the user from database to get their role
+      if (account && user && user.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
         });
         
         if (dbUser) {
           token.role = dbUser.role;
-          token.workspaceId = dbUser.workspaceId;
+          token.workspaceId = dbUser.workspaceId || undefined;
         }
       }
+      
       return token;
     },
     async session({ session, token }) {
@@ -80,7 +82,8 @@ export const authOptions: NextAuthOptions = {
       // Make first user a super admin (platform owner)
       if (account?.provider === "google" || account?.provider === "email") {
         const userCount = await prisma.user.count();
-        if (userCount === 1) {
+        
+        if (userCount === 0) {
           // First user becomes super admin (platform owner)
           await prisma.user.update({
             where: { id: user.id },
@@ -89,6 +92,13 @@ export const authOptions: NextAuthOptions = {
         }
       }
       return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
   },
   pages: {

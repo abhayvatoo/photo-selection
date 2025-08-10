@@ -30,18 +30,40 @@ export default async function HomePage() {
               <span className="text-xl font-bold text-black">PhotoSelect</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/auth/signin"
-                className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/signin"
-                className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-              >
-                Get Started
-              </Link>
+              {session?.user ? (
+                <>
+                  <span className="text-gray-600 text-sm">
+                    Welcome, {session.user.name || session.user.email}
+                  </span>
+                  <Link
+                    href="/dashboard"
+                    className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/api/auth/signout"
+                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    Sign Out
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/signin"
+                    className="text-gray-600 hover:text-black px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/signin"
+                    className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

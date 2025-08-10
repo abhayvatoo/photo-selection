@@ -19,25 +19,27 @@ export async function requireAuth() {
 
 export async function requireRole(allowedRoles: UserRole[]) {
   const user = await requireAuth();
+  
   if (!allowedRoles.includes(user.role)) {
     redirect("/unauthorized");
   }
+  
   return user;
 }
 
 export async function requireAdmin() {
-  return await requireRole([UserRole.ADMIN]);
+  return await requireRole([UserRole.SUPER_ADMIN]);
 }
 
 export async function requireUploadPermission() {
-  return await requireRole([UserRole.ADMIN, UserRole.PHOTOGRAPHER]);
+  return await requireRole([UserRole.SUPER_ADMIN, UserRole.BUSINESS_OWNER]);
 }
 
 export async function requireWorkspaceAccess(workspaceSlug: string) {
   const user = await requireAuth();
   
-  // Admin can access any workspace
-  if (user.role === UserRole.ADMIN) {
+  // Super admin can access any workspace
+  if (user.role === UserRole.SUPER_ADMIN) {
     return user;
   }
   
@@ -74,16 +76,16 @@ export function hasRole(userRole: UserRole, allowedRoles: UserRole[]): boolean {
 }
 
 export function canUploadPhotos(userRole: UserRole): boolean {
-  return hasRole(userRole, [UserRole.ADMIN, UserRole.PHOTOGRAPHER]);
+  return hasRole(userRole, [UserRole.SUPER_ADMIN, UserRole.BUSINESS_OWNER]);
 }
 
 export function canManageWorkspaces(userRole: UserRole): boolean {
-  return hasRole(userRole, [UserRole.ADMIN]);
+  return hasRole(userRole, [UserRole.SUPER_ADMIN]);
 }
 
 export function canAccessWorkspace(userRole: UserRole, userWorkspaceId: string | undefined, targetWorkspaceId: string): boolean {
-  // Admin can access any workspace
-  if (userRole === UserRole.ADMIN) {
+  // Super admin can access any workspace
+  if (userRole === UserRole.SUPER_ADMIN) {
     return true;
   }
   

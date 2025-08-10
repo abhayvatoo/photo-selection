@@ -7,25 +7,21 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
 
-    // Admin routes - only accessible by ADMIN
-    if (pathname.startsWith("/admin")) {
-      if (token?.role !== UserRole.ADMIN) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
+    if (token) {  
+      // Upload routes - accessible by SUPER_ADMIN and BUSINESS_OWNER
+      if (pathname.startsWith("/upload") || pathname.includes("/api/photos/upload")) {
+        if (token?.role !== UserRole.SUPER_ADMIN && token?.role !== UserRole.BUSINESS_OWNER) {
+          return NextResponse.redirect(new URL("/unauthorized", req.url));
+        }
       }
-    }
 
-    // Upload routes - accessible by ADMIN and PHOTOGRAPHER
-    if (pathname.startsWith("/upload") || pathname.includes("/api/photos/upload")) {
-      if (token?.role !== UserRole.ADMIN && token?.role !== UserRole.PHOTOGRAPHER) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
-      }
-    }
-
-    // Workspace-specific routes - ensure user belongs to workspace
-    if (pathname.startsWith("/workspace/")) {
-      const workspaceSlug = pathname.split("/")[2];
-      if (token?.workspaceSlug !== workspaceSlug && token?.role !== UserRole.ADMIN) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
+      // Workspace routes - users can only access their own workspace (except SUPER_ADMIN)
+      const workspaceMatch = pathname.match(/^\/workspace\/([^\/]+)/);
+      if (workspaceMatch) {
+        const workspaceSlug = workspaceMatch[1];
+        if (token?.workspaceSlug !== workspaceSlug && token?.role !== UserRole.SUPER_ADMIN) {
+          return NextResponse.redirect(new URL("/unauthorized", req.url));
+        }
       }
     }
 

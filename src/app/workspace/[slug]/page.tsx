@@ -73,8 +73,8 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   }
 
   const userRole = (session.user as any)?.role;
-  const canUpload = userRole === 'ADMIN' || userRole === 'PHOTOGRAPHER';
-  const canManage = userRole === 'ADMIN';
+  const canUpload = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+  const canManage = userRole === 'SUPER_ADMIN';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -84,7 +84,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <a 
-                href={userRole === 'ADMIN' ? '/admin' : '/'}
+                href="/dashboard"
                 className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
               >
                 <ArrowLeft className="h-5 w-5 mr-1" />
@@ -201,13 +201,15 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.role === 'ADMIN' 
+                    user.role === 'SUPER_ADMIN' 
                       ? 'bg-purple-100 text-purple-800'
-                      : user.role === 'PHOTOGRAPHER'
+                      : user.role === 'BUSINESS_OWNER'
                       ? 'bg-blue-100 text-blue-800'
+                      : user.role === 'STAFF'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {user.role}
+                    {user.role?.toLowerCase().replace('_', ' ')}
                   </span>
                 </div>
               ))}

@@ -12,7 +12,7 @@ export default async function PhotographerDashboard() {
   }
 
   const userRole = (session.user as any)?.role;
-  if (userRole !== 'PHOTOGRAPHER' && userRole !== 'ADMIN') {
+  if (userRole !== 'BUSINESS_OWNER' && userRole !== 'SUPER_ADMIN') {
     redirect('/unauthorized');
   }
 
@@ -23,7 +23,7 @@ export default async function PhotographerDashboard() {
         OR: [
           { users: { some: { id: session.user.id } } },
           // Admins can see all workspaces
-          userRole === 'ADMIN' ? {} : { id: 'never-match' }
+          userRole === 'SUPER_ADMIN' ? {} : { id: 'never-match' }
         ]
       },
       include: {
@@ -38,7 +38,7 @@ export default async function PhotographerDashboard() {
         photos: {
           select: {
             id: true,
-            uploaderId: true,
+            uploadedById: true,
           },
         },
         _count: {
@@ -115,7 +115,7 @@ export default async function PhotographerDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Photos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {workspaces.reduce((sum, ws) => sum + ws._count.photos, 0)}
+                  {workspaces.reduce((sum, ws) => sum + (ws as any)._count.photos, 0)}
                 </p>
               </div>
             </div>
@@ -162,11 +162,11 @@ export default async function PhotographerDashboard() {
                       <div className="flex items-center space-x-6 mt-3 text-sm text-gray-500">
                         <span className="flex items-center">
                           <Users className="h-4 w-4 mr-1" />
-                          {workspace._count.users} members
+                          {(workspace as any)._count.users} members
                         </span>
                         <span className="flex items-center">
                           <Camera className="h-4 w-4 mr-1" />
-                          {workspace._count.photos} photos
+                          {(workspace as any)._count.photos} photos
                         </span>
                         <span>
                           Updated {new Date(workspace.updatedAt).toLocaleDateString()}
