@@ -72,7 +72,8 @@ class ProductionPhotoStore {
       });
 
       socket.on('photoUploaded', (data) => {
-        this.handlePhotoUpload(data.photo);
+        // Refresh photos when upload notification is received
+        this.loadPhotos();
       });
 
       socket.on('userConnected', (data) => {
@@ -195,8 +196,11 @@ class ProductionPhotoStore {
       this.state.photos.unshift(photo);
       
       // Emit to socket for real-time updates
-      if (this.state.socket) {
-        this.state.socket.emit('uploadPhoto', { photo });
+      if (this.state.socket && this.state.currentUser) {
+        this.state.socket.emit('uploadPhoto', { 
+          workspaceId: 'default', // TODO: Add proper workspace context
+          message: `New photo uploaded by ${this.state.currentUser.name}`
+        });
       }
       
       this.notify();

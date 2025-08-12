@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Upload, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { useSocket } from '@/hooks/useSocket';
 
 interface PhotoUploadProps {
   workspaceId: string;
@@ -11,6 +12,7 @@ interface PhotoUploadProps {
 
 export default function PhotoUpload({ workspaceId, onUpload }: PhotoUploadProps) {
   const { data: session } = useSession();
+  const socket = useSocket(session?.user?.id, session?.user?.name || session?.user?.email || 'Unknown');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -52,6 +54,14 @@ export default function PhotoUpload({ workspaceId, onUpload }: PhotoUploadProps)
       // Reset the input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
+      }
+
+      // Emit socket event for real-time photo upload notification
+      if (socket) {
+        socket.emit('uploadPhoto', { 
+          workspaceId,
+          message: `New photos uploaded by ${session?.user?.name || session?.user?.email}`
+        });
       }
 
       setUploadSuccess(true);

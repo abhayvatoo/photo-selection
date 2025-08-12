@@ -9,7 +9,7 @@ export interface SocketData {
 
 export interface ServerToClientEvents {
   photoSelected: (data: { photoId: string; userId: string; userName: string; selected: boolean }) => void;
-  photoUploaded: (data: { photo: any }) => void;
+  photoUploaded: (data: { workspaceId: string; message: string }) => void;
   userConnected: (data: { userId: string; userName: string }) => void;
   userDisconnected: (data: { userId: string }) => void;
 }
@@ -17,7 +17,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   joinRoom: (data: { userId: string; userName: string }) => void;
   selectPhoto: (data: { photoId: string; userId: string }) => void;
-  uploadPhoto: (data: { photo: any }) => void;
+  uploadPhoto: (data: { workspaceId: string; message: string }) => void;
 }
 
 export function initializeSocket(httpServer: HTTPServer) {
@@ -96,8 +96,11 @@ export function initializeSocket(httpServer: HTTPServer) {
     });
 
     socket.on('uploadPhoto', (data) => {
-      // Broadcast new photo to all users
-      socket.to('photo-selection').emit('photoUploaded', data);
+      // Broadcast new photo upload notification to all users
+      socket.to('photo-selection').emit('photoUploaded', { 
+        workspaceId: data.workspaceId,
+        message: data.message 
+      });
     });
 
     socket.on('disconnect', () => {

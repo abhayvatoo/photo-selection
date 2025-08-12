@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import archiver from 'archiver';
+import { Readable } from 'stream';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,19 +48,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, return a simple JSON response with photo URLs
-    // TODO: Implement proper ZIP download functionality with archiver package
-    return NextResponse.json({
-      success: true,
-      message: 'Selected photos ready for download',
-      photos: photos.map(photo => ({
-        id: photo.id,
-        filename: photo.originalName,
-        url: photo.url,
-        downloadUrl: photo.url, // Direct download for now
-      })),
-      note: 'ZIP download functionality will be implemented in a future update'
+    // Create ZIP archive
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Maximum compression
     });
+
+    // Set up response headers for ZIP download
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const filename = `selected-photos-${timestamp}.zip`;
+    
+    const headers = new Headers({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    // Create a readable stream for the response
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+
+    // Handle archive events
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      writer.close();
+    });
+
+    archive.on('end', () => {
+      writer.close();
+    });
+
+    // Pipe archive data to the writable stream
+    archive.on('data', (chunk) => {
+      writer.write(chunk);
+    });
+
+    // Add photos to archive
+    for (const photo of photos) {
+      try {
+        // Fetch the photo file
+        const photoResponse = await fetch(photo.url);
+        if (photoResponse.ok) {
+          const photoBuffer = await photoResponse.arrayBuffer();
+          const photoStream = Readable.from(Buffer.from(photoBuffer));
+          
+          // Add to archive with original filename
+          archive.append(photoStream, { 
+            name: photo.originalName || photo.filename 
+          });
+        }
+      } catch (error) {
+        console.error(`Error adding photo ${photo.id} to archive:`, error);
+        // Continue with other photos even if one fails
+      }
+    }
+
+    // Finalize the archive
+    archive.finalize();
+
+    return new NextResponse(readable, { headers });
 
   } catch (error) {
     console.error('Error creating photo download:', error);
