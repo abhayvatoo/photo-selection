@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { ArrowLeft, Upload, Download, Eye, Heart, Camera, Users, Calendar } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
+import PhotoGallery from '@/components/PhotoGallery';
 
 interface WorkspacePageProps {
   params: {
@@ -120,10 +121,6 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   {workspace.users.length} members
                 </div>
                 <div className="flex items-center">
-                  <Camera className="h-4 w-4 mr-1" />
-                  {workspace.photos.length} photos
-                </div>
-                <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
                   Created {new Date(workspace.createdAt).toLocaleDateString()}
                 </div>
@@ -137,48 +134,24 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           </div>
         </div>
 
-        {/* Photos Grid */}
+        {/* Photos Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Photos</h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Photos</h3>
+            {canUpload && (
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Photos
+              </button>
+            )}
+          </div>
           
-          {workspace.photos.length === 0 ? (
-            <div className="text-center py-12">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No photos uploaded yet</p>
-              {canUpload && (
-                <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                  Upload First Photos
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {workspace.photos.map((photo) => (
-                <div key={photo.id} className="relative group">
-                  <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                    <img
-                      src={photo.url}
-                      alt={photo.originalName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                  <div className="mt-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {photo.originalName}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      by {photo.uploadedBy.name || photo.uploadedBy.email}
-                    </p>
-                    {photo.selections.length > 0 && (
-                      <p className="text-xs text-green-600 mt-1">
-                        ✓ Selected by {photo.selections.length} user(s)
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <PhotoGallery 
+            workspaceId={workspace.id}
+            userId={session.user.id}
+            userRole={userRole}
+            canSelect={userRole === 'USER' || userRole === 'STAFF' || userRole === 'BUSINESS_OWNER' || userRole === 'SUPER_ADMIN'}
+          />
         </div>
 
         {/* Team Members (for admins) */}
