@@ -4,14 +4,16 @@ A modern, multi-tenant photo selection platform built for professional photograp
 
 ## ✨ Features
 
-- 🔐 **Multi-tenant Authentication** - NextAuth with Google OAuth and email sign-in
-- 👥 **Role-based Access Control** - Admin, Photographer, and Client roles
-- 🏢 **Client Workspaces** - Isolated spaces for each client with secure photo delivery
+- 🔐 **Secure Authentication** - NextAuth with magic link and Google OAuth
+- 👥 **Role-based Access Control** - Super Admin, Business Owner, Staff, and Client roles
+- 🎫 **Invitation System** - Secure token-based user invitations with automatic role assignment
+- 💳 **Subscription Integration** - Automatic Business Owner creation via payment webhooks
+- 🏢 **Multi-tenant Workspaces** - Complete data isolation between client workspaces
 - 📸 **Bulk Photo Upload** - Drag-and-drop multiple photos with automatic optimization
 - ⚡ **Real-time Selection** - Live updates as clients select their favorite photos
 - 📊 **Admin Dashboard** - Manage workspaces, users, and view analytics
 - 📱 **Responsive Design** - Works perfectly on desktop and mobile devices
-- 🔒 **Enterprise Security** - End-to-end encryption and secure file storage
+- 🔒 **Enterprise Security** - Token expiration, audit trails, and webhook verification
 
 ## 🚀 Quick Start
 
@@ -540,6 +542,113 @@ tail -f /opt/homebrew/var/log/postgresql@15.log
 rm -rf .next
 npm run build
 ```
+
+## 🔐 Production Authentication System
+
+### User Roles & Hierarchy
+- **SUPER_ADMIN**: Platform owner (first user only)
+- **BUSINESS_OWNER**: Photographers who purchase subscriptions
+- **STAFF**: Employees of business owners
+- **USER**: End clients who view/select photos
+
+### Production Authentication Flow
+
+#### 1. Super Admin Creation
+- **Trigger**: First user to sign up
+- **Process**: Automatic assignment via `signIn` callback
+- **Security**: Only first user becomes SUPER_ADMIN
+
+#### 2. Business Owner Creation (Subscription-based)
+- **Trigger**: Subscription purchase webhook
+- **Process**: 
+  1. Customer purchases subscription (Stripe/payment provider)
+  2. Webhook received at `/api/webhooks/subscription`
+  3. User automatically created/upgraded to BUSINESS_OWNER
+  4. Default workspace created and assigned
+- **Security**: Webhook signature verification required
+
+#### 3. Staff & Client Invitation System
+- **Trigger**: Business Owner or Super Admin creates invitation
+- **Process**:
+  1. Generate secure random token (64 characters)
+  2. Create invitation record with expiration (72 hours)
+  3. Send invitation email with link: `/invite/{token}`
+  4. User clicks link → signs in with magic link
+  5. Role automatically assigned upon acceptance
+
+### Security Features
+
+#### Invitation Security
+- **Unique Tokens**: Cryptographically secure random tokens
+- **Expiration**: 72-hour automatic expiration
+- **Single Use**: Tokens become invalid after acceptance
+- **Email Verification**: Must sign in with invited email
+- **Permission Checks**: Role-based invitation creation permissions
+- **Audit Trail**: Complete logging of invitation lifecycle
+
+#### Permission Matrix
+| Role | Can Invite | Roles They Can Invite |
+|------|------------|----------------------|
+| SUPER_ADMIN | ✅ | BUSINESS_OWNER, STAFF, USER |
+| BUSINESS_OWNER | ✅ | STAFF, USER (to their workspaces only) |
+| STAFF | ❌ | None |
+| USER | ❌ | None |
+
+#### Workspace Isolation
+- **STAFF & USER**: Must be assigned to specific workspace
+- **BUSINESS_OWNER**: Can only invite to workspaces they own
+- **Multi-tenancy**: Complete data isolation between workspaces
+
+### API Endpoints
+
+#### Invitation Management
+- `POST /api/invitations/create` - Create invitation
+- `GET /api/invitations/{token}` - Preview invitation
+- `POST /api/invitations/accept` - Accept invitation
+- `POST /api/invitations/revoke` - Revoke invitation
+
+#### Subscription Webhooks
+- `POST /api/webhooks/subscription` - Handle subscription events
+
+### Testing Authentication Flow
+
+#### 1. Super Admin Testing
+```bash
+# First user becomes SUPER_ADMIN automatically
+# Access: /dashboard (admin interface)
+```
+
+#### 2. Business Owner Testing
+```bash
+# Webhook simulation for testing
+curl -X POST http://localhost:3000/api/webhooks/subscription \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "customer.subscription.created",
+    "data": {
+      "object": {
+        "customer_email": "photographer@example.com",
+        "customer_name": "John Photographer"
+      }
+    }
+  }'
+```
+
+#### 3. Staff/Client Testing
+1. Use invitation system through UI or API
+2. Business Owner creates invitations via `/photographer` dashboard
+3. Users receive secure invitation links
+4. Click link → automatic role assignment
+
+### Security Benefits
+
+✅ **No Manual Database Access**: All role assignments through secure APIs  
+✅ **Audit Trail**: Complete logging of all role changes  
+✅ **Token Expiration**: Automatic cleanup of expired invitations  
+✅ **Permission Validation**: Role-based access control  
+✅ **Email Verification**: Must use invited email address  
+✅ **Workspace Isolation**: Multi-tenant security  
+✅ **Webhook Security**: Signature verification for subscriptions
 
 ## 🤝 Contributing
 

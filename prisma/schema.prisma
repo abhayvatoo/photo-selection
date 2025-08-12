@@ -86,6 +86,10 @@ model User {
   // Photo Relations
   uploadedPhotos Photo[]         @relation("PhotoUploader")
   selections     PhotoSelection[]
+  
+  // Invitation Relations
+  createdInvitations Invitation[] @relation("InvitationCreator")
+  acceptedInvitations Invitation[] @relation("InvitationAcceptor")
 
   @@map("User")
 }
@@ -102,6 +106,7 @@ model Workspace {
   // Relations
   users  User[]
   photos Photo[]
+  invitations Invitation[]
 
   @@map("Workspace")
 }
@@ -143,4 +148,38 @@ model PhotoSelection {
   // Ensure a user can only select a photo once
   @@unique([photoId, userId])
   @@map("PhotoSelection")
+}
+
+// Secure Invitation System
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  token       String           @unique // Secure random token
+  email       String
+  role        UserRole
+  workspaceId String?
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  // Who created this invitation
+  invitedById String
+  invitedBy   User @relation("InvitationCreator", fields: [invitedById], references: [id])
+  
+  // Optional workspace assignment
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  
+  // Track acceptance
+  acceptedAt  DateTime?
+  acceptedById String?
+  acceptedBy  User? @relation("InvitationAcceptor", fields: [acceptedById], references: [id])
+  
+  @@map("Invitation")
 }
