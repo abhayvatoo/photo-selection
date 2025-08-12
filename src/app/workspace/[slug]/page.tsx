@@ -6,6 +6,8 @@ import { ArrowLeft, Upload, Download, Eye, Heart, Camera, Users, Calendar } from
 import { notFound, redirect } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import PhotoGallery from '@/components/PhotoGallery';
+import PhotoUpload from '@/components/PhotoUpload';
+import InviteUsers from '@/components/InviteUsers';
 
 interface WorkspacePageProps {
   params: {
@@ -134,16 +136,42 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           </div>
         </div>
 
+        {/* Photo Upload Section - Only for BUSINESS_OWNER and SUPER_ADMIN */}
+        {canUpload && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Photos</h3>
+            <p className="text-gray-600 mb-4">
+              Add new photos to this workspace for clients to view and select.
+            </p>
+            <PhotoUpload 
+              workspaceId={workspace.id}
+              onUpload={() => {
+                // Refresh the page to show new photos
+                window.location.reload();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Invite Users Section - Only for BUSINESS_OWNER and SUPER_ADMIN */}
+        {canUpload && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <InviteUsers 
+              userRole={userRole as any}
+              workspaceId={workspace.id}
+            />
+          </div>
+        )}
+
         {/* Photos Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Photos</h3>
-            {canUpload && (
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Upload Photos
-              </button>
-            )}
+            <div className="text-sm text-gray-500">
+              {userRole === 'USER' ? 'Select your favorites by clicking the heart icon' : 
+               userRole === 'BUSINESS_OWNER' ? 'View client selections and manage photos' :
+               'Browse workspace photos'}
+            </div>
           </div>
           
           <PhotoGallery 

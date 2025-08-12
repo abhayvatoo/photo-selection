@@ -181,24 +181,24 @@ export default async function WorkspacesPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link
-                  href="/photographer"
+                  href="/workspaces"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
                 >
                   <Camera className="h-8 w-8 text-blue-600 mr-3" />
                   <div>
                     <div className="font-medium text-gray-900">Upload Photos</div>
-                    <div className="text-sm text-gray-600">Add new photos to workspaces</div>
+                    <div className="text-sm text-gray-600">Go to workspace to upload photos</div>
                   </div>
                 </Link>
                 
                 <Link
-                  href="/photographer"
+                  href="/workspaces"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
                 >
                   <Users className="h-8 w-8 text-green-600 mr-3" />
                   <div>
                     <div className="font-medium text-gray-900">Invite Clients</div>
-                    <div className="text-sm text-gray-600">Send workspace invitations</div>
+                    <div className="text-sm text-gray-600">Manage invitations in workspace</div>
                   </div>
                 </Link>
                 
