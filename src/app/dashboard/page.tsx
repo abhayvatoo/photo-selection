@@ -5,6 +5,7 @@ import { canUploadPhotos, canManageWorkspaces, canAccessWorkspace } from '@/lib/
 import { prisma } from '@/lib/db';
 import { UserRole, WorkspaceStatus } from '@prisma/client';
 import { Navigation } from '@/components/Navigation';
+import { CreateWorkspaceButton } from '@/components/admin/CreateWorkspaceButton';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -225,10 +226,7 @@ export default async function DashboardPage() {
                   Manage all client workspaces and their users
                 </p>
               </div>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Create Workspace</span>
-              </button>
+              <CreateWorkspaceButton />
             </div>
 
             {adminData.workspaces.length === 0 ? (
@@ -271,9 +269,12 @@ export default async function DashboardPage() {
                       >
                         View
                       </Link>
-                      <button className="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm hover:bg-gray-300 transition-colors">
-                        Edit
-                      </button>
+                      <Link
+                        href={`/workspace/${workspace.slug}`}
+                        className="flex-1 bg-gray-200 text-gray-700 text-center py-2 px-3 rounded text-sm hover:bg-gray-300 transition-colors"
+                      >
+                        Manage
+                      </Link>
                     </div>
                   </div>
                 ))}

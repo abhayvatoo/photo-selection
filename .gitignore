@@ -28,6 +28,9 @@ Thumbs.db
 bucket/
 !bucket/README.md
 
+# Development email files
+dev-emails/
+
 # Docker
 docker-data/
 

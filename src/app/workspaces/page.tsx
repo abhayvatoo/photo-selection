@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { Camera, Users, Calendar, ArrowRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
+import { CreateWorkspaceButton } from '@/components/admin/CreateWorkspaceButton';
 import { UserRole } from '@prisma/client';
 
 export default async function WorkspacesPage() {
@@ -85,16 +86,21 @@ export default async function WorkspacesPage() {
       <div style={{ paddingTop: '64px' }}>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Workspaces</h1>
-            <p className="text-gray-600">
-              {userRole === UserRole.SUPER_ADMIN 
-                ? "Manage all workspaces across the platform"
-                : userRole === UserRole.BUSINESS_OWNER
-                ? "Manage your photography workspaces and client projects"
-                : "Access your assigned workspace and photo selections"
-              }
-            </p>
+          <div className="mb-8 flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Workspaces</h1>
+              <p className="text-gray-600">
+                {userRole === UserRole.SUPER_ADMIN 
+                  ? "Manage all workspaces across the platform"
+                  : userRole === UserRole.BUSINESS_OWNER
+                  ? "Manage your photography workspaces and client projects"
+                  : "Access your assigned workspace and photo selections"
+                }
+              </p>
+            </div>
+            {(userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER) && workspaces.length > 0 && (
+              <CreateWorkspaceButton />
+            )}
           </div>
 
           {/* Workspaces Grid */}
@@ -110,14 +116,8 @@ export default async function WorkspacesPage() {
                   : "You haven't been assigned to a workspace yet. Contact your photographer."
                 }
               </p>
-              {userRole === UserRole.SUPER_ADMIN && (
-                <Link
-                  href="/dashboard"
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
-                >
-                  <Plus className="h-5 w-5" />
-                  Create Workspace
-                </Link>
+              {(userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER) && (
+                <CreateWorkspaceButton />
               )}
             </div>
           ) : (

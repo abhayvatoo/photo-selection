@@ -106,8 +106,10 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     onClick={() => {
-                      // Handle delete - implement later
-                      console.log('Delete workspace:', workspace.id);
+                      if (confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone and will delete all photos and data in this workspace.`)) {
+                        // TODO: Implement actual delete API call
+                        alert('Delete functionality will be implemented in a future update. For now, please contact support to delete workspaces.');
+                      }
                     }}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />

@@ -144,53 +144,52 @@ This invitation was sent by ${this.fromName}.
     data: InvitationEmailData
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      // Check if Resend is configured
-      if (!process.env.RESEND_API_KEY) {
-        console.log('📧 Resend not configured. Email would be sent to:', recipientEmail);
-        console.log('📧 Invitation URL:', data.inviteUrl);
+      const template = this.generateInvitationTemplate(data);
+
+      // Development mode - log email instead of sending
+      if (process.env.NODE_ENV === 'development' && process.env.FORCE_REAL_EMAILS !== 'true') {
+        console.log('\n' + '='.repeat(80));
+        console.log('📧 DEVELOPMENT EMAIL - Invitation');
+        console.log('='.repeat(80));
+        console.log('📤 From:', `${this.fromName} <${this.fromEmail}>`);
+        console.log('📥 To:', recipientEmail);
+        console.log('📋 Subject:', template.subject);
+        console.log('👤 Invitee:', data.inviteeName);
+        console.log('👨‍💼 Inviter:', data.inviterName);
+        console.log('🏢 Workspace:', data.workspaceName);
+        console.log('🔑 Role:', data.role);
+        console.log('🔗 Invite URL:', data.inviteUrl);
+        console.log('⏰ Expires:', data.expiresAt.toISOString());
+        console.log('='.repeat(80));
+        console.log('🔗 COPY THIS INVITATION LINK TO TEST:');
+        console.log('   ' + data.inviteUrl);
+        console.log('='.repeat(80) + '\n');
+        
         return { 
           success: true, 
-          messageId: 'dev-mode-' + Date.now(),
-          error: 'Resend not configured - running in development mode'
+          messageId: 'dev-' + Date.now() 
         };
       }
 
-      const template = this.generateInvitationTemplate(data);
-
-      const { data: response, error } = await resend.emails.send({
+      const { data: emailData, error } = await resend.emails.send({
         from: `${this.fromName} <${this.fromEmail}>`,
         to: [recipientEmail],
         subject: template.subject,
         text: template.text,
         html: template.html,
-        // Add custom headers for identification
-        headers: {
-          'X-Invitation-Type': 'workspace-invitation',
-          'X-Workspace-Role': data.role,
-        },
-        // Add tags for analytics
-        tags: [
-          { name: 'category', value: 'invitation' },
-          { name: 'role', value: data.role },
-        ],
       });
 
       if (error) {
-        console.error('📧 Failed to send invitation email:', error);
+        console.error('Failed to send invitation email:', error);
         return { 
           success: false, 
-          error: error.message || 'Failed to send email'
+          error: error.message || 'Failed to send invitation email'
         };
       }
-      
-      console.log('📧 Invitation email sent successfully:', {
-        to: recipientEmail,
-        messageId: response?.id,
-      });
 
       return { 
         success: true, 
-        messageId: response?.id 
+        messageId: emailData?.id 
       };
 
     } catch (error) {
@@ -208,32 +207,55 @@ This invitation was sent by ${this.fromName}.
    */
   async sendTestEmail(recipientEmail: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Development mode - log email instead of sending
+      if (process.env.NODE_ENV === 'development' && process.env.FORCE_REAL_EMAILS !== 'true') {
+        console.log('\n' + '='.repeat(80));
+        console.log('📧 DEVELOPMENT EMAIL - Test Email');
+        console.log('='.repeat(80));
+        console.log('📤 From:', `${this.fromName} <${this.fromEmail}>`);
+        console.log('📥 To:', recipientEmail);
+        console.log('📋 Subject: PhotoSelect - Email Service Test');
+        console.log('📄 Content:');
+        console.log('   This is a test email to verify your email configuration is working correctly.');
+        console.log('   If you received this email, your Resend integration is properly configured!');
+        console.log('   Sent at:', new Date().toISOString());
+        console.log('='.repeat(80));
+        console.log('✅ Email logged successfully (development mode)');
+        console.log('💡 To send real emails in development, set FORCE_REAL_EMAILS=true in .env');
+        console.log('='.repeat(80) + '\n');
+        
+        return { success: true };
+      }
+      
       if (!process.env.RESEND_API_KEY) {
         return { success: false, error: 'Resend API key not configured' };
       }
 
-      const { error } = await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: `${this.fromName} <${this.fromEmail}>`,
         to: [recipientEmail],
-        subject: 'Photo Selection App - Email Configuration Test',
+        subject: 'PhotoSelect - Email Service Test',
         text: 'This is a test email to verify your email configuration is working correctly.',
         html: `
-          <h2>Email Configuration Test</h2>
-          <p>This is a test email to verify your email configuration is working correctly.</p>
-          <p>If you received this email, your Resend integration is properly configured!</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">PhotoSelect - Email Service Test</h2>
+            <p>This is a test email to verify your email configuration is working correctly.</p>
+            <p>If you received this email, your Resend integration is properly configured!</p>
+            <p style="color: #6b7280; font-size: 14px;">Sent at: ${new Date().toISOString()}</p>
+          </div>
         `,
       });
 
       if (error) {
-        console.error('Failed to send test email:', error);
         return { success: false, error: error.message || 'Failed to send test email' };
       }
 
       return { success: true };
-
     } catch (error) {
-      console.error('Failed to send test email:', error);
-      return { success: false, error: 'Failed to send test email' };
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send email'
+      };
     }
   }
 }

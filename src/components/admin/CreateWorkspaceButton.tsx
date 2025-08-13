@@ -16,6 +16,8 @@ export function CreateWorkspaceButton() {
     e.preventDefault();
     setIsLoading(true);
 
+    console.log('🔧 CreateWorkspaceButton: Submitting form with data:', formData);
+
     try {
       const response = await fetch('/api/admin/workspaces', {
         method: 'POST',
@@ -25,18 +27,23 @@ export function CreateWorkspaceButton() {
         body: JSON.stringify(formData),
       });
 
+      console.log('📡 CreateWorkspaceButton: API response status:', response.status);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ CreateWorkspaceButton: Workspace created successfully:', result);
         setShowModal(false);
         setFormData({ name: '', slug: '', description: '' });
         // Refresh the page to show new workspace
         window.location.reload();
       } else {
         const error = await response.json();
-        alert(error.message || 'Failed to create workspace');
+        console.error('❌ CreateWorkspaceButton: API error:', error);
+        alert(`Failed to create workspace: ${error.error || error.message || 'Unknown error'}\n\nDetails: ${error.details || 'No additional details'}`);
       }
     } catch (error) {
-      console.error('Error creating workspace:', error);
-      alert('Failed to create workspace');
+      console.error('❌ CreateWorkspaceButton: Network/parsing error:', error);
+      alert(`Failed to create workspace: ${error instanceof Error ? error.message : 'Network error'}`);
     } finally {
       setIsLoading(false);
     }
