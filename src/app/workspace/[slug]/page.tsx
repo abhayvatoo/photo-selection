@@ -141,10 +141,6 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             </p>
             <PhotoUpload 
               workspaceId={workspace.id}
-              onUpload={() => {
-                // Refresh the page to show new photos
-                window.location.reload();
-              }}
             />
           </div>
         )}
