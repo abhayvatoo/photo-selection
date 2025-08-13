@@ -140,6 +140,134 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section className="relative z-10 py-20 bg-gray-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-black mb-6">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-xl text-gray-600">
+              Start free, scale as you grow. No hidden fees.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Starter Plan */}
+            <div className="bg-white p-8 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300">
+              <h3 className="text-xl font-semibold text-black mb-2">Starter</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-black">$0</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Up to 3 workspaces</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">100 photos per workspace</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Basic support</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Email notifications</span>
+                </li>
+              </ul>
+              <Link
+                href="/auth/signin"
+                className="w-full bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center"
+              >
+                Get Started Free
+              </Link>
+            </div>
+
+            {/* Professional Plan */}
+            <div className="bg-black text-white p-8 rounded-xl relative transform hover:scale-105 transition-all duration-300">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Most Popular
+                </span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Professional</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold">$29</span>
+                <span className="text-gray-300">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                  <span>Unlimited workspaces</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                  <span>Unlimited photos</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                  <span>Team collaboration</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                  <span>Priority support</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
+                  <span>Advanced analytics</span>
+                </li>
+              </ul>
+              <Link
+                href="/auth/signin"
+                className="w-full bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors block text-center"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="bg-white p-8 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300">
+              <h3 className="text-xl font-semibold text-black mb-2">Enterprise</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-black">$99</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Everything in Professional</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Custom branding</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">API access</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">Dedicated support</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <span className="text-gray-600">SLA guarantee</span>
+                </li>
+              </ul>
+              <Link
+                href="/contact-sales"
+                className="w-full bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center"
+              >
+                Contact Sales
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="relative z-10 py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -414,134 +542,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="relative z-10 py-20 bg-gray-50/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-black mb-6">
-              Simple, transparent pricing
-            </h2>
-            <p className="text-xl text-gray-600">
-              Start free, scale as you grow. No hidden fees.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Starter Plan */}
-            <div className="bg-white p-8 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300">
-              <h3 className="text-xl font-semibold text-black mb-2">Starter</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-black">$0</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Up to 3 workspaces</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">100 photos per workspace</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Basic support</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Email notifications</span>
-                </li>
-              </ul>
-              <Link
-                href="/auth/signin"
-                className="w-full bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center"
-              >
-                Get Started Free
-              </Link>
-            </div>
-
-            {/* Professional Plan */}
-            <div className="bg-black text-white p-8 rounded-xl relative transform hover:scale-105 transition-all duration-300">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Most Popular
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Professional</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-bold">$29</span>
-                <span className="text-gray-300">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                  <span>Unlimited workspaces</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                  <span>Unlimited photos</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                  <span>Team collaboration</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
-                  <span>Advanced analytics</span>
-                </li>
-              </ul>
-              <Link
-                href="/auth/signin"
-                className="w-full bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors block text-center"
-              >
-                Start Free Trial
-              </Link>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="bg-white p-8 rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300">
-              <h3 className="text-xl font-semibold text-black mb-2">Enterprise</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-black">$99</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Everything in Professional</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Custom branding</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">API access</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">Dedicated support</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                  <span className="text-gray-600">SLA guarantee</span>
-                </li>
-              </ul>
-              <Link
-                href="/auth/signin"
-                className="w-full bg-gray-100 text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors block text-center"
-              >
-                Contact Sales
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="relative z-10 py-20 bg-black text-white">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
@@ -561,7 +561,7 @@ export default async function HomePage() {
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/auth/signin"
+              href="/contact-sales"
               className="border border-gray-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-gray-900 transition-colors"
             >
               Contact Sales
@@ -582,10 +582,10 @@ export default async function HomePage() {
               <span className="text-lg font-bold text-black">PhotoSelect</span>
             </div>
             <div className="flex space-x-6 text-sm text-gray-600">
-              <Link href="#" className="hover:text-black transition-colors">Privacy</Link>
-              <Link href="#" className="hover:text-black transition-colors">Terms</Link>
-              <Link href="#" className="hover:text-black transition-colors">Support</Link>
-              <Link href="#" className="hover:text-black transition-colors">Documentation</Link>
+              <Link href="/privacy" className="hover:text-black transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-black transition-colors">Terms</Link>
+              <Link href="/support" className="hover:text-black transition-colors">Support</Link>
+              <Link href="/documentation" className="hover:text-black transition-colors">Documentation</Link>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
