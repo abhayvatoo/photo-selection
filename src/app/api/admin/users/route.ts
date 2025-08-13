@@ -4,10 +4,14 @@ import { prisma } from '@/lib/db';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 import { CSRFProtection } from '@/lib/csrf';
-import { rateLimiters } from '@/lib/rate-limit';
+import { rateLimiters, applyRateLimit } from '@/lib/rate-limit';
 import { RequestLimits, requestLimits } from '@/lib/request-limits';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { withErrorHandler } from '@/lib/error-handling';
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
 
 // Input validation schema
 const createUserSchema = z.object({
@@ -113,30 +117,59 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return NextResponse.json(user, { status: 201 });
+        return NextResponse.json({
+          success: true,
+          user
+        }, { status: 201 });
       } catch (error) {
-        console.error('Error creating user:', error);
+        // Handle specific database errors without exposing internal details
+        if (error instanceof Error) {
+          if (error.message.includes('Unique constraint')) {
+            return NextResponse.json(
+              { error: 'User with this email already exists' },
+              { status: 409 }
+            );
+          }
+        }
+        
         return NextResponse.json(
           { error: 'Failed to create user' },
           { status: 500 }
         );
       }
-    });
-  });
+    }, requestLimits.general);
 }
 
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandler(async () => {
+    // 1. Rate limiting for admin operations
+    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // 2. Authentication and authorization check
     await requireAdmin();
 
+    // 3. Input validation for query parameters
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get('workspaceId');
     const role = searchParams.get('role');
 
+    const queryValidation = getUsersSchema.safeParse({ workspaceId, role });
+    if (!queryValidation.success) {
+      return NextResponse.json({
+        error: 'Invalid query parameters',
+        details: queryValidation.error.issues.map(issue => issue.message)
+      }, { status: 400 });
+    }
+
+    // 4. Build query filters
     const where: any = {};
     if (workspaceId) where.workspaceId = workspaceId;
     if (role) where.role = role as UserRole;
 
+    // 5. Fetch users with sanitized data
     const users = await prisma.user.findMany({
       where,
       include: {
@@ -167,12 +200,10 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
-  }
+    // 6. Return sanitized response
+    return NextResponse.json({
+      success: true,
+      users
+    });
+  });
 }
