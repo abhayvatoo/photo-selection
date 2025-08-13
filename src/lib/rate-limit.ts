@@ -146,36 +146,50 @@ export const rateLimiters = {
   // General API endpoints
   general: new RateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100, // 100 requests per 15 minutes
-    message: 'Too many API requests, please try again later.',
+    maxRequests: 100,
+    message: 'Too many requests from this IP, please try again later.',
   }),
 
   // Authentication endpoints (stricter)
   auth: new RateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 10, // 10 requests per 15 minutes
+    maxRequests: 5,
     message: 'Too many authentication attempts, please try again later.',
   }),
 
-  // Photo upload (very strict)
+  // File upload endpoints
   upload: new RateLimiter({
-    windowMs: 60 * 1000, // 1 minute
-    maxRequests: 5, // 5 uploads per minute
-    message: 'Upload rate limit exceeded, please wait before uploading more photos.',
-  }),
-
-  // Email sending (strict)
-  email: new RateLimiter({
     windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 20, // 20 emails per hour
-    message: 'Email rate limit exceeded, please try again later.',
+    maxRequests: 50,
+    message: 'Upload limit exceeded, please try again later.',
   }),
 
-  // Invitation creation (moderate)
+  // Stripe/payment endpoints
+  payment: new RateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 10,
+    message: 'Payment request limit exceeded, please try again later.',
+  }),
+
+  // Invitation endpoints
   invitation: new RateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 20,
+    message: 'Invitation limit exceeded, please try again later.',
+  }),
+
+  // Password reset/sensitive operations
+  sensitive: new RateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 3,
+    message: 'Too many sensitive operations, please try again later.',
+  }),
+
+  // CSRF token requests
+  csrf: new RateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 30, // 30 invitations per 15 minutes
-    message: 'Too many invitations sent, please try again later.',
+    maxRequests: 50,
+    message: 'Too many CSRF token requests, please try again later.',
   }),
 };
 

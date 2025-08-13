@@ -3,19 +3,42 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { prisma } from '@/lib/db';
+import { withCSRFProtection } from '@/lib/csrf';
+import { rateLimiters, applyRateLimit } from '@/lib/rate-limit';
+import { validateInput } from '@/lib/validation';
+import { z } from 'zod';
+
+const createCheckoutSchema = z.object({
+  planType: z.enum(['starter', 'professional', 'enterprise']),
+  csrfToken: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  // Apply rate limiting
+  const rateLimitResponse = await applyRateLimit(request, rateLimiters.payment);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
-    const { planType } = await request.json();
-    
-    if (!planType || !['starter', 'professional', 'enterprise'].includes(planType)) {
-      return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 });
-    }
+  // Apply CSRF protection
+  return withCSRFProtection(request, async () => {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      const body = await request.json();
+      const validation = validateInput(createCheckoutSchema, body);
+      
+      if (!validation.success) {
+        return NextResponse.json({ 
+          error: 'Invalid input', 
+          details: validation.errors 
+        }, { status: 400 });
+      }
+
+      const { planType } = validation.data;
 
     // Get user with current subscription
     const user = await prisma.user.findUnique({
@@ -123,11 +146,12 @@ export async function POST(request: NextRequest) {
       checkoutUrl: checkoutSession.url 
     });
 
-  } catch (error) {
-    console.error('Checkout session creation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create checkout session' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Checkout session creation error:', error);
+      return NextResponse.json(
+        { error: 'Failed to create checkout session' },
+        { status: 500 }
+      );
+    }
+  });
 }

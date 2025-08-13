@@ -1,6 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { UserRole } from "@prisma/client";
+import { SecurityHeaders } from "@/lib/security-headers";
 
 export default withAuth(
   function middleware(req) {
@@ -25,7 +26,8 @@ export default withAuth(
       }
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return SecurityHeaders.applyHeaders(response);
   },
   {
     callbacks: {
