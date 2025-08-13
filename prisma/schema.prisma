@@ -94,6 +94,10 @@ model User {
   // Subscription Relations
   subscription Subscription?
 
+  // Performance indexes
+  @@index([workspaceId]) // For workspace user lookups
+  @@index([role]) // For role-based queries
+  @@index([email, role]) // For authentication and role checks
   @@map("User")
 }
 
@@ -134,6 +138,10 @@ model Photo {
   // Photo Relations
   selections PhotoSelection[]
 
+  // Performance indexes for frequently queried fields
+  @@index([workspaceId, createdAt(sort: Desc)]) // For workspace photo listing with date ordering
+  @@index([uploadedById]) // For user's uploaded photos
+  @@index([filename]) // For file lookups
   @@map("Photo")
 }
 
@@ -150,6 +158,9 @@ model PhotoSelection {
 
   // Ensure a user can only select a photo once
   @@unique([photoId, userId])
+  // Performance indexes
+  @@index([userId, createdAt(sort: Desc)]) // For user's selections with date ordering
+  @@index([photoId]) // For photo's selections lookup
   @@map("PhotoSelection")
 }
 

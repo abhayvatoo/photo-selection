@@ -74,9 +74,18 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
   return PLAN_LIMITS[subscription.planType];
 }
 
+/**
+ * Checks if user can create additional workspaces based on their subscription plan
+ * Only counts workspaces where user has BUSINESS_OWNER or SUPER_ADMIN role
+ * @param userId - The user ID to check limits for
+ * @returns Object with allowed status, current count, and limit
+ */
 export async function checkWorkspaceLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
+  // Get user's current subscription plan limits
   const limits = await getUserPlanLimits(userId);
   
+  // Count workspaces where user has ownership/admin privileges
+  // This prevents counting workspaces where user is just a STAFF or USER
   const currentWorkspaces = await prisma.workspace.count({
     where: {
       users: {
@@ -89,34 +98,53 @@ export async function checkWorkspaceLimit(userId: string): Promise<{ allowed: bo
   });
 
   return {
+    // -1 indicates unlimited (Enterprise plan)
     allowed: limits.maxWorkspaces === -1 || currentWorkspaces < limits.maxWorkspaces,
     current: currentWorkspaces,
     limit: limits.maxWorkspaces
   };
 }
 
+/**
+ * Checks if workspace can accept more photos based on subscription plan limits
+ * @param workspaceId - The workspace ID to check photo count for
+ * @param userId - The user ID to get subscription limits from
+ * @returns Object with allowed status, current count, and limit
+ */
 export async function checkPhotoLimit(workspaceId: string, userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
+  // Get user's subscription plan limits
   const limits = await getUserPlanLimits(userId);
   
+  // Count total photos in the specific workspace
   const currentPhotos = await prisma.photo.count({
     where: { workspaceId }
   });
 
   return {
+    // -1 indicates unlimited photos (Enterprise plan)
     allowed: limits.maxPhotosPerWorkspace === -1 || currentPhotos < limits.maxPhotosPerWorkspace,
     current: currentPhotos,
     limit: limits.maxPhotosPerWorkspace
   };
 }
 
+/**
+ * Checks if workspace can accept more users based on subscription plan limits
+ * @param workspaceId - The workspace ID to check user count for
+ * @param userId - The user ID to get subscription limits from
+ * @returns Object with allowed status, current count, and limit
+ */
 export async function checkUserLimit(workspaceId: string, userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
+  // Get user's subscription plan limits
   const limits = await getUserPlanLimits(userId);
   
+  // Count all users currently assigned to this workspace
   const currentUsers = await prisma.user.count({
     where: { workspaceId }
   });
 
   return {
+    // -1 indicates unlimited users (Enterprise plan)
     allowed: limits.maxUsersPerWorkspace === -1 || currentUsers < limits.maxUsersPerWorkspace,
     current: currentUsers,
     limit: limits.maxUsersPerWorkspace

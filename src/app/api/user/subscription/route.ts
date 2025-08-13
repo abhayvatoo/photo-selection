@@ -9,8 +9,8 @@ import { withErrorHandler } from '@/lib/error-handling';
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  return withErrorHandler(async () => {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  try {
     // 1. Rate limiting for subscription data access
     const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
     if (rateLimitResponse) {
@@ -74,5 +74,8 @@ export async function GET(request: NextRequest) {
       // Generic error for unexpected cases
       return NextResponse.json({ error: 'Failed to fetch subscription information' }, { status: 500 });
     }
-  });
+  } catch (error) {
+    console.error('Subscription API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

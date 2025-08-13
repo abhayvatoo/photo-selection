@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Heart, Download, AlertCircle, Loader2, CheckCircle2, Eye, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSocket } from '@/hooks/useSocket';
-import Image from 'next/image';
+import { Loader2, AlertCircle, X, Trash2, Download } from 'lucide-react';
+import { UserRole } from '@prisma/client';
+import { io, Socket } from 'socket.io-client';
+import PhotoCard from './PhotoCard';
+import PhotoPreviewModal from './PhotoPreviewModal';
+import PhotoGalleryToolbar from './PhotoGalleryToolbar';
+import ErrorBoundary from './ErrorBoundary';
+import { PAGINATION, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
+import { validationResponses } from '@/lib/validation-utils';
 
 interface Photo {
   id: number;
@@ -49,17 +55,63 @@ export default function PhotoGallery({
   const [selectingPhoto, setSelectingPhoto] = useState<number | null>(null);
   const [managementMode, setManagementMode] = useState(false);
   const [deletingPhotos, setDeletingPhotos] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
   
   // Initialize Socket.io connection
-  const socket = useSocket(session?.user?.id, session?.user?.name || session?.user?.email || 'Unknown');
-  
-  // Check if user can manage photos (delete, organize)
-  const canManage = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  // Fetch photos for the workspace
+  useEffect(() => {
+    if (session?.user?.id) {
+      const newSocket = io({
+        query: {
+          userId: session.user.id,
+          userName: session.user.name || session.user.email || 'Unknown'
+        }
+      });
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.close();
+      };
+    }
+  }, [session?.user?.id, session?.user?.name, session?.user?.email]);
+  
+  // Memoized computed values for performance
+  const canManage = useMemo(() => 
+    userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER',
+    [userRole]
+  );
+
+  /**
+   * Fetches photos for the workspace with error handling
+   */
+  const fetchPhotos = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/photos/workspace/${workspaceId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch photos: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setPhotos(data.photos || []);
+    } catch (err) {
+      console.error('Error fetching photos:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load photos');
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId]);
+
+  // Fetch photos when workspace changes
   useEffect(() => {
     fetchPhotos();
-  }, [workspaceId]);
+  }, [fetchPhotos]);
 
   // Socket.io event listeners for real-time updates
   useEffect(() => {
@@ -122,36 +174,7 @@ export default function PhotoGallery({
       socket.off('photoSelected');
       socket.off('photoUploaded');
     };
-  }, [socket, session?.user?.id]);
-
-  const fetchPhotos = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/photos/workspace/${workspaceId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch photos');
-      }
-      
-      const data = await response.json();
-      setPhotos(data.photos || []);
-      
-      // Set initially selected photos
-      const initialSelections = new Set<number>();
-      data.photos?.forEach((photo: Photo) => {
-        const userSelection = photo.selections.find(s => s.userId === userId);
-        if (userSelection) {
-          initialSelections.add(photo.id);
-        }
-      });
-      setSelectedPhotos(initialSelections);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load photos');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [socket, session?.user?.id, fetchPhotos]);
 
   const togglePhotoSelection = async (photoId: number) => {
     if (!canSelect || selectingPhoto === photoId) return;
@@ -286,38 +309,142 @@ export default function PhotoGallery({
     }
   };
 
-  const deletePhoto = async (photoId: number) => {
-    if (!canManage) return;
-    
-    if (!confirm('Are you sure you want to delete this photo? This action cannot be undone.')) {
+  /**
+   * Gets CSRF token for secure requests
+   */
+  const getCsrfToken = useCallback(async () => {
+    const response = await fetch('/api/csrf-token');
+    const data = await response.json();
+    return data.token;
+  }, []);
+
+  const handleDeletePhoto = useCallback(async (photoId: number) => {
+    if (!confirm('Are you sure you want to delete this photo?')) {
       return;
     }
     
     try {
       const response = await fetch(`/api/photos/${photoId}/delete`, {
         method: 'DELETE',
+        headers: {
+          'X-CSRF-Token': await getCsrfToken(),
+        },
       });
-      
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Delete failed');
+        throw new Error('Failed to delete photo');
       }
-      
-      // Remove photo from local state
+
       setPhotos(prevPhotos => prevPhotos.filter(photo => photo.id !== photoId));
-      
-      // Remove from selection if selected
-      setSelectedPhotos(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(photoId);
-        return newSet;
-      });
-      
     } catch (err) {
-      console.error('Delete error:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete photo');
+      console.error('Error deleting photo:', err);
     }
-  };
+  }, [getCsrfToken]);
+
+  const handleTogglePhotoSelection = useCallback((photoId: number) => {
+    setSelectedPhotos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(photoId)) {
+        newSet.delete(photoId);
+      } else {
+        newSet.add(photoId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  /**
+   * Handles photo preview modal
+   */
+  const handlePhotoPreview = useCallback((photo: Photo) => {
+    setPreviewPhoto(photo);
+    setIsPreviewOpen(true);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setIsPreviewOpen(false);
+    setPreviewPhoto(null);
+  }, []);
+
+  /**
+   * Handles photo download
+   */
+  const handlePhotoDownload = useCallback(async (photo: Photo) => {
+    try {
+      const response = await fetch('/api/photos/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': await getCsrfToken(),
+        },
+        body: JSON.stringify({ photoIds: [photo.id] }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download photo');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = photo.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading photo:', err);
+    }
+  }, [getCsrfToken]);
+
+  /**
+   * Handles photo selection for regular users
+   */
+  const handlePhotoSelect = useCallback(async (photoId: number) => {
+    if (!canSelect || isSelecting) return;
+    
+    setIsSelecting(true);
+    try {
+      const response = await fetch(`/api/photos/${photoId}/select`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': await getCsrfToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to select photo');
+      }
+
+      // Update local state - the socket will handle real-time updates
+      setPhotos(prevPhotos => 
+        prevPhotos.map(photo => 
+          photo.id === photoId 
+            ? {
+                ...photo,
+                selections: photo.selections.some(s => s.userId === session?.user?.id)
+                  ? photo.selections.filter(s => s.userId !== session?.user?.id)
+                  : [...photo.selections, {
+                      id: `temp-${Date.now()}`,
+                      userId: session?.user?.id || '',
+                      user: {
+                        name: session?.user?.name || null,
+                        email: session?.user?.email || ''
+                      }
+                    }]
+              }
+            : photo
+        )
+      );
+    } catch (err) {
+      console.error('Error selecting photo:', err);
+    } finally {
+      setIsSelecting(false);
+    }
+  }, [canSelect, isSelecting, getCsrfToken, session?.user?.id, session?.user?.name, session?.user?.email]);
 
   if (loading) {
     return (
@@ -430,84 +557,37 @@ export default function PhotoGallery({
       </div>
 
       {/* Photo Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {photos.map((photo) => {
-          const isSelected = selectedPhotos.has(photo.id);
-          const isSelecting = selectingPhoto === photo.id;
-          
-          return (
-            <div
-              key={photo.id}
-              className={`relative group cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${
-                isSelected 
-                  ? 'ring-4 ring-red-500 ring-opacity-75 shadow-lg' 
-                  : 'hover:shadow-md'
-              }`}
-              onClick={() => canSelect && togglePhotoSelection(photo.id)}
-            >
-              {/* Photo */}
-              <div className="aspect-square relative bg-gray-100">
-                <Image
-                  src={photo.url}
-                  alt={photo.originalName}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                />
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200" />
-                
-                {/* Selection indicator or delete button */}
-                {managementMode && canManage ? (
-                  <div className="absolute top-2 right-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deletePhoto(photo.id);
-                      }}
-                      className="bg-red-600 hover:bg-red-700 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : canSelect && (
-                  <div className="absolute top-2 right-2">
-                    {isSelecting ? (
-                      <Loader2 className="h-6 w-6 text-white animate-spin" />
-                    ) : (
-                      <Heart
-                        className={`h-6 w-6 transition-all duration-200 ${
-                          isSelected
-                            ? 'text-red-500 fill-red-500'
-                            : 'text-white opacity-0 group-hover:opacity-100'
-                        }`}
-                      />
-                    )}
-                  </div>
-                )}
-                
-                {/* Selection checkmark */}
-                {isSelected && (
-                  <div className="absolute top-2 left-2">
-                    <CheckCircle2 className="h-6 w-6 text-red-500 fill-white" />
-                  </div>
-                )}
-              </div>
-              
-              {/* Photo info */}
-              <div className="p-2 bg-white">
-                <div className="text-xs text-gray-500 truncate">
-                  {photo.originalName}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {new Date(photo.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {photos.map((photo) => (
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            userId={userId}
+            canSelect={canSelect}
+            canManage={canManage}
+            managementMode={managementMode}
+            isSelected={selectedPhotos.has(photo.id)}
+            isSelecting={selectingPhoto === photo.id}
+            onSelect={togglePhotoSelection}
+            onToggleSelection={handleTogglePhotoSelection}
+            onPreview={handlePhotoPreview}
+            onDownload={handlePhotoDownload}
+            onDelete={canManage ? handleDeletePhoto : undefined}
+          />
+        ))}
       </div>
+
+      {/* Photo Preview Modal */}
+      <PhotoPreviewModal
+        photo={previewPhoto}
+        isOpen={isPreviewOpen}
+        userId={userId}
+        canSelect={canSelect}
+        isSelecting={selectingPhoto === previewPhoto?.id}
+        onClose={handleClosePreview}
+        onSelect={handlePhotoSelect}
+        onDownload={handlePhotoDownload}
+      />
       
       {/* Selection summary for clients */}
       {canSelect && userRole === 'USER' && selectedPhotos.size > 0 && (
