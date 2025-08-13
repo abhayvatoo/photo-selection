@@ -2,26 +2,74 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUploadPermission } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
 import { WorkspaceStatus } from '@prisma/client';
+import { z } from 'zod';
+import { CSRFProtection } from '@/lib/csrf';
+import { rateLimiters } from '@/lib/rate-limit';
+import { RequestLimits, requestLimits } from '@/lib/request-limits';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+// Input validation schema
+const createWorkspaceSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  slug: z.string().min(1, 'Slug is required').max(50, 'Slug too long').regex(/^[a-z0-9-]+$/, 'Invalid slug format'),
+  description: z.string().max(500, 'Description too long').optional(),
+});
 
 export async function POST(request: NextRequest) {
-  try {
-    console.log('🔧 Workspace creation API called');
-    
-    const user = await requireUploadPermission();
-    console.log('✅ User authenticated:', { id: user.id, role: user.role, email: user.email });
-
-    const body = await request.json();
-    console.log('📝 Request body:', body);
-    
-    const { name, slug, description } = body;
-
-    if (!name || !slug) {
-      console.log('❌ Validation failed: missing name or slug');
+  return RequestLimits.withRequestLimits(async () => {
+    // Apply rate limiting
+    const rateLimitResult = await rateLimiters.sensitive.isRateLimited(request);
+    if (rateLimitResult.limited) {
       return NextResponse.json(
-        { error: 'Name and slug are required' },
-        { status: 400 }
+        { error: 'Too many requests, please try again later.' },
+        { status: 429 }
       );
     }
+
+    // Increment rate limit counter
+    await rateLimiters.sensitive.increment(request);
+
+    try {
+      // Get session for CSRF validation
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+
+      // Validate CSRF token
+      const csrfToken = request.headers.get('x-csrf-token');
+      if (!csrfToken || !await CSRFProtection.validateToken(session.user.id, csrfToken)) {
+        return NextResponse.json(
+          { error: 'Invalid CSRF token' },
+          { status: 403 }
+        );
+      }
+
+      console.log('🔧 Workspace creation API called');
+      
+      const user = await requireUploadPermission();
+      console.log('✅ User authenticated:', { id: user.id, role: user.role, email: user.email });
+
+      const body = await request.json();
+      console.log('📝 Request body:', body);
+      
+      // Validate and sanitize input
+      const validationResult = createWorkspaceSchema.safeParse(body);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          { 
+            error: 'Invalid input data',
+            details: validationResult.error.issues.map((e: any) => e.message)
+          },
+          { status: 400 }
+        );
+      }
+
+      const { name, slug, description } = validationResult.data;
 
     console.log('🔍 Checking for existing workspace with slug:', slug);
     

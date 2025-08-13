@@ -221,12 +221,125 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Review the troubleshooting sections in the deployment guide
 - Create an issue for bugs or feature requests
 
+## 🔒 Security
+
+This application implements enterprise-grade security measures to protect user data and prevent common web vulnerabilities.
+
+### 🛡️ Security Features
+
+- **CSRF Protection**: All state-changing operations require valid CSRF tokens
+- **Rate Limiting**: Endpoint-specific rate limits prevent abuse and DoS attacks
+- **Input Validation**: Comprehensive validation using Zod schemas
+- **File Upload Security**: Type validation, size limits, and malicious file detection
+- **Security Headers**: CSP, HSTS, X-Frame-Options, and other protective headers
+- **Session Security**: Idle timeout, login attempt tracking, and session rotation
+- **Authentication**: NextAuth.js with secure session management
+- **Authorization**: Role-based access control with workspace isolation
+
+### 🔐 CSRF Protection
+
+This application uses CSRF tokens to prevent Cross-Site Request Forgery attacks. All authenticated requests that modify data must include a valid CSRF token in the `X-CSRF-Token` header.
+
+**For developers:**
+```javascript
+// Get CSRF token
+const response = await fetch('/api/csrf-token');
+const { token } = await response.json();
+
+// Include in requests
+await fetch('/api/admin/users', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': token
+  },
+  body: JSON.stringify(data)
+});
+```
+
+### 🚦 Rate Limiting
+
+Different endpoints have different rate limits based on their sensitivity:
+
+- **Authentication**: 10 requests/hour
+- **File Uploads**: 50 requests/hour  
+- **Payment Operations**: 10 requests/hour
+- **Admin Operations**: 3 requests/hour
+- **General API**: 100 requests/hour
+
+Rate limit exceeded requests return `429 Too Many Requests`.
+
+### 📁 File Upload Security
+
+File uploads are secured with multiple layers of protection:
+
+- **File Type Validation**: Only image files (JPEG, PNG, WebP) allowed
+- **File Size Limits**: Maximum 50MB per file
+- **Malicious Filename Detection**: Path traversal and dangerous filenames blocked
+- **MIME Type Verification**: Content-Type headers validated
+
+### 🔍 Input Validation
+
+All user inputs are validated using Zod schemas:
+
+- **Email Validation**: RFC-compliant email format checking
+- **String Length Limits**: Prevent buffer overflow attacks
+- **Type Safety**: TypeScript + Zod ensure type correctness
+- **Sanitization**: HTML/script tag removal where appropriate
+
+### 🌐 Security Headers
+
+The following security headers are automatically applied:
+
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+### 🚨 Reporting Security Vulnerabilities
+
+If you discover a security vulnerability, please report it responsibly:
+
+1. **DO NOT** create a public GitHub issue
+2. Email security concerns to: [YOUR_SECURITY_EMAIL]
+3. Include detailed steps to reproduce
+4. Allow reasonable time for response and fix
+
+### 🔧 Security Configuration
+
+Ensure these security-related environment variables are properly configured:
+
+```bash
+# Security Features (optional, defaults to enabled)
+ENABLE_SECURITY_HEADERS=true
+ENABLE_RATE_LIMITING=true
+ENABLE_CSRF_PROTECTION=true
+```
+
+### 📋 Production Security Checklist
+
+Before deploying to production:
+
+- [ ] All environment variables configured
+- [ ] HTTPS certificate installed and configured
+- [ ] Security headers tested and working
+- [ ] Rate limiting tested and appropriate
+- [ ] CSRF protection enabled and tested
+- [ ] File upload restrictions tested
+- [ ] Database access properly secured
+- [ ] Monitoring and alerting configured
+- [ ] Backup and recovery procedures tested
+
 ## 🎯 Roadmap
 
 - [ ] Advanced analytics dashboard
 - [ ] Bulk photo operations
 - [ ] Custom branding options
-- [ ] API rate limiting
+- [x] API rate limiting ✅
 - [ ] Advanced user permissions
 - [ ] Mobile app development
 

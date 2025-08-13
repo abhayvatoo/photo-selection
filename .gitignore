@@ -43,3 +43,10 @@ prisma/migrations/
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# Private security documentation
+SECURITY_TESTING_PRIVATE.md
+*_PRIVATE.md
+*.security.local.*
+security-tests/
+penetration-tests/

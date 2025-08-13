@@ -78,7 +78,7 @@ export class EnvironmentValidator {
       // Validate required environment variables
       const requiredResult = requiredEnvSchema.safeParse(process.env);
       if (!requiredResult.success) {
-        errors.push(...requiredResult.error.errors.map((err: any) => 
+        errors.push(...requiredResult.error.issues.map((err: any) => 
           `${err.path.join('.')}: ${err.message}`
         ));
       }
@@ -86,7 +86,7 @@ export class EnvironmentValidator {
       // Validate optional environment variables
       const optionalResult = optionalEnvSchema.safeParse(process.env);
       if (!optionalResult.success) {
-        warnings.push(...optionalResult.error.errors.map((err: any) => 
+        warnings.push(...optionalResult.error.issues.map((err: any) => 
           `${err.path.join('.')}: ${err.message}`
         ));
       }
@@ -247,7 +247,7 @@ export class EnvironmentValidator {
       } else {
         return {
           success: false,
-          error: result.error.errors.map((e: any) => e.message).join(', ')
+          error: result.error.issues.map((e: any) => e.message).join(', ')
         };
       }
     } catch (err: any) {

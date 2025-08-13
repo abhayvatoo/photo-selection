@@ -23,9 +23,20 @@ const getUsersSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  return RequestLimits.validateRequest(request, requestLimits.auth, async () => {
-    return rateLimiters.sensitive(request, async () => {
-      try {
+  return RequestLimits.withRequestLimits(async () => {
+    // Apply rate limiting
+    const rateLimitResult = await rateLimiters.sensitive.isRateLimited(request);
+    if (rateLimitResult.limited) {
+      return NextResponse.json(
+        { error: 'Too many requests, please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    // Increment rate limit counter
+    await rateLimiters.sensitive.increment(request);
+
+    try {
         // Get session for CSRF validation
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { 
               error: 'Invalid input data',
-              details: validationResult.error.errors.map((e: any) => e.message)
+              details: validationResult.error.issues.map((e: any) => e.message)
             },
             { status: 400 }
           );
