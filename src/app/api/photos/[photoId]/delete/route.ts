@@ -2,87 +2,125 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { rateLimiters, applyRateLimit } from '@/lib/rate-limit';
+import { withCSRFProtection } from '@/lib/csrf';
+import { UserRole } from '@prisma/client';
+import { withErrorHandler } from '@/lib/error-handling';
+import { z } from 'zod';
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
+// Input validation schema
+const deletePhotoSchema = z.object({
+  photoId: z.string()
+    .regex(/^\d+$/, 'Photo ID must be a number')
+    .transform(val => parseInt(val, 10))
+    .refine(val => val > 0, 'Photo ID must be positive')
+});
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { photoId: string } }
 ) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return withErrorHandler(async () => {
+    // 1. Rate limiting for destructive operations
+    const rateLimitResponse = await applyRateLimit(request, rateLimiters.sensitive);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
-    const photoId = parseInt(params.photoId);
-    if (isNaN(photoId)) {
-      return NextResponse.json({ error: 'Invalid photo ID' }, { status: 400 });
-    }
+    // 2. CSRF protection
+    return withCSRFProtection(request, async () => {
+      // 3. Authentication check
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      }
 
-    // Get user role
-    const userRole = (session.user as any)?.role;
-    
-    // Check if user has permission to delete photos
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-    }
+      // 4. Input validation
+      const validationResult = deletePhotoSchema.safeParse({ photoId: params.photoId });
+      if (!validationResult.success) {
+        return NextResponse.json({ 
+          error: 'Invalid photo ID format',
+          details: validationResult.error.issues.map(issue => issue.message)
+        }, { status: 400 });
+      }
 
-    // Find the photo and verify ownership/access
-    const photo = await prisma.photo.findUnique({
-      where: { id: photoId },
-      include: {
-        workspace: {
-          include: {
-            users: {
-              select: { id: true, role: true }
+      const photoId = validationResult.data.photoId;
+      const userId = session.user.id;
+      const userRole = (session.user as any)?.role as UserRole;
+
+      // 5. Permission check - only certain roles can delete photos
+      if (userRole !== UserRole.SUPER_ADMIN && userRole !== UserRole.BUSINESS_OWNER) {
+        return NextResponse.json({ error: 'Insufficient permissions to delete photos' }, { status: 403 });
+      }
+
+      // 6. Find photo and verify access with workspace isolation
+      const photo = await prisma.photo.findUnique({
+        where: { id: photoId },
+        include: {
+          workspace: {
+            include: {
+              users: {
+                select: { id: true, role: true }
+              }
             }
+          },
+          uploadedBy: {
+            select: { id: true }
           }
-        },
-        uploadedBy: {
-          select: { id: true }
         }
+      });
+
+      if (!photo) {
+        return NextResponse.json({ error: 'Photo not found' }, { status: 404 });
+      }
+
+      // 7. Authorization check with workspace access control
+      const canDelete = userRole === UserRole.SUPER_ADMIN || 
+                       photo.uploadedById === userId ||
+                       photo.workspace.users.some(user => 
+                         user.id === userId && user.role === UserRole.BUSINESS_OWNER
+                       );
+
+      if (!canDelete) {
+        return NextResponse.json({ 
+          error: 'Access denied - insufficient permissions for this photo' 
+        }, { status: 403 });
+      }
+
+      // 8. Delete photo with transaction for data integrity
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Delete all photo selections first (cascade delete)
+          await tx.photoSelection.deleteMany({
+            where: { photoId: photoId }
+          });
+
+          // Delete the photo
+          await tx.photo.delete({
+            where: { id: photoId }
+          });
+        });
+
+        // 9. Return success response
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Photo deleted successfully' 
+        });
+
+      } catch (error) {
+        // Handle specific deletion errors
+        if (error instanceof Error) {
+          if (error.message.includes('foreign key constraint')) {
+            return NextResponse.json({ error: 'Cannot delete photo - it has associated data' }, { status: 409 });
+          }
+        }
+        
+        // Generic error for unexpected cases
+        return NextResponse.json({ error: 'Failed to delete photo' }, { status: 500 });
       }
     });
-
-    if (!photo) {
-      return NextResponse.json({ error: 'Photo not found' }, { status: 404 });
-    }
-
-    // Check permissions:
-    // - SUPER_ADMIN can delete any photo
-    // - BUSINESS_OWNER can delete photos in their workspaces or photos they uploaded
-    const canDelete = userRole === 'SUPER_ADMIN' || 
-                     photo.uploadedById === session.user.id ||
-                     photo.workspace.users.some(user => 
-                       user.id === session.user.id && user.role === 'BUSINESS_OWNER'
-                     );
-
-    if (!canDelete) {
-      return NextResponse.json({ 
-        error: 'You can only delete photos you uploaded or photos in your workspaces' 
-      }, { status: 403 });
-    }
-
-    // Delete all photo selections first (cascade delete)
-    await prisma.photoSelection.deleteMany({
-      where: { photoId: photoId }
-    });
-
-    // Delete the photo
-    await prisma.photo.delete({
-      where: { id: photoId }
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Photo deleted successfully' 
-    });
-
-  } catch (error) {
-    console.error('Error deleting photo:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete photo' },
-      { status: 500 }
-    );
-  }
+  });
 }
