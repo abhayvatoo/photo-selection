@@ -2,68 +2,116 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
 import { UserRole } from '@prisma/client';
+import { z } from 'zod';
+import { CSRFProtection } from '@/lib/csrf';
+import { rateLimiters } from '@/lib/rate-limit';
+import { RequestLimits, requestLimits } from '@/lib/request-limits';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+// Input validation schema
+const createUserSchema = z.object({
+  email: z.string().email('Invalid email format').max(255),
+  name: z.string().min(1).max(100).optional(),
+  role: z.enum(['SUPER_ADMIN', 'BUSINESS_OWNER', 'ADMIN', 'PHOTOGRAPHER', 'CLIENT']),
+  workspaceId: z.string().uuid().optional(),
+});
+
+const getUsersSchema = z.object({
+  workspaceId: z.string().uuid().optional(),
+  role: z.enum(['SUPER_ADMIN', 'BUSINESS_OWNER', 'ADMIN', 'PHOTOGRAPHER', 'CLIENT']).optional(),
+});
 
 export async function POST(request: NextRequest) {
-  try {
-    await requireAdmin();
+  return RequestLimits.validateRequest(request, requestLimits.auth, async () => {
+    return rateLimiters.sensitive(request, async () => {
+      try {
+        // Get session for CSRF validation
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+          return NextResponse.json(
+            { error: 'Authentication required' },
+            { status: 401 }
+          );
+        }
 
-    const { email, name, role, workspaceId } = await request.json();
+        // Validate CSRF token
+        const csrfToken = request.headers.get('x-csrf-token');
+        if (!csrfToken || !await CSRFProtection.validateToken(session.user.id, csrfToken)) {
+          return NextResponse.json(
+            { error: 'Invalid CSRF token' },
+            { status: 403 }
+          );
+        }
 
-    if (!email || !role) {
-      return NextResponse.json(
-        { error: 'Email and role are required' },
-        { status: 400 }
-      );
-    }
+        await requireAdmin();
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+        const body = await request.json();
+        
+        // Validate input
+        const validationResult = createUserSchema.safeParse(body);
+        if (!validationResult.success) {
+          return NextResponse.json(
+            { 
+              error: 'Invalid input data',
+              details: validationResult.error.errors.map((e: any) => e.message)
+            },
+            { status: 400 }
+          );
+        }
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      );
-    }
+        const { email, name, role, workspaceId } = validationResult.data;
 
-    // Validate workspace if provided
-    if (workspaceId) {
-      const workspace = await prisma.workspace.findUnique({
-        where: { id: workspaceId },
-      });
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+        });
 
-      if (!workspace) {
+        if (existingUser) {
+          return NextResponse.json(
+            { error: 'User with this email already exists' },
+            { status: 409 }
+          );
+        }
+
+        // Validate workspace if provided
+        if (workspaceId) {
+          const workspace = await prisma.workspace.findUnique({
+            where: { id: workspaceId },
+          });
+
+          if (!workspace) {
+            return NextResponse.json(
+              { error: 'Workspace not found' },
+              { status: 404 }
+            );
+          }
+        }
+
+        // Create user
+        const user = await prisma.user.create({
+          data: {
+            email,
+            name: name || null,
+            role: role as UserRole,
+            workspaceId: workspaceId || null,
+            color: '#3B82F6',
+          },
+          include: {
+            workspace: true,
+          },
+        });
+
+        return NextResponse.json(user, { status: 201 });
+      } catch (error) {
+        console.error('Error creating user:', error);
         return NextResponse.json(
-          { error: 'Workspace not found' },
-          { status: 404 }
+          { error: 'Failed to create user' },
+          { status: 500 }
         );
       }
-    }
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: name || null,
-        role: role as UserRole,
-        workspaceId: workspaceId || null,
-        color: '#3B82F6',
-      },
-      include: {
-        workspace: true,
-      },
     });
-
-    return NextResponse.json(user, { status: 201 });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
-  }
+  });
 }
 
 export async function GET(request: NextRequest) {

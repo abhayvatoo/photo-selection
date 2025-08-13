@@ -39,9 +39,9 @@ const optionalEnvSchema = z.object({
 
   // Security settings
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  ENABLE_SECURITY_HEADERS: z.string().transform(val => val === 'true').default('true'),
-  ENABLE_RATE_LIMITING: z.string().transform(val => val === 'true').default('true'),
-  ENABLE_CSRF_PROTECTION: z.string().transform(val => val === 'true').default('true'),
+  ENABLE_SECURITY_HEADERS: z.string().optional().transform(val => (val || 'true') === 'true'),
+  ENABLE_RATE_LIMITING: z.string().optional().transform(val => (val || 'true') === 'true'),
+  ENABLE_CSRF_PROTECTION: z.string().optional().transform(val => (val || 'true') === 'true'),
 });
 
 export interface EnvironmentConfig {
@@ -78,7 +78,7 @@ export class EnvironmentValidator {
       // Validate required environment variables
       const requiredResult = requiredEnvSchema.safeParse(process.env);
       if (!requiredResult.success) {
-        errors.push(...requiredResult.error.errors.map(err => 
+        errors.push(...requiredResult.error.errors.map((err: any) => 
           `${err.path.join('.')}: ${err.message}`
         ));
       }
@@ -86,7 +86,7 @@ export class EnvironmentValidator {
       // Validate optional environment variables
       const optionalResult = optionalEnvSchema.safeParse(process.env);
       if (!optionalResult.success) {
-        warnings.push(...optionalResult.error.errors.map(err => 
+        warnings.push(...optionalResult.error.errors.map((err: any) => 
           `${err.path.join('.')}: ${err.message}`
         ));
       }
@@ -95,11 +95,10 @@ export class EnvironmentValidator {
         return { success: false, errors, warnings };
       }
 
-      // Merge validated environment variables
-      this.validatedEnv = {
-        ...requiredResult.data,
-        ...optionalResult.data,
-      };
+      // Merge validated environment variables  
+      const requiredEnv = requiredResult.data!;
+      const optionalEnv = optionalResult.data!;
+      this.validatedEnv = { ...requiredEnv, ...optionalEnv };
 
       // Generate configuration
       this.config = this.generateConfig();
@@ -113,8 +112,8 @@ export class EnvironmentValidator {
         config: this.config,
       };
 
-    } catch (error) {
-      errors.push(`Environment validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (err: any) {
+      errors.push(`Environment validation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       return { success: false, errors };
     }
   }
@@ -246,15 +245,15 @@ export class EnvironmentValidator {
       if (result.success) {
         return { success: true, value: result.data };
       } else {
-        return { 
-          success: false, 
-          error: result.error.errors.map(e => e.message).join(', ')
+        return {
+          success: false,
+          error: result.error.errors.map((e: any) => e.message).join(', ')
         };
       }
-    } catch (error) {
+    } catch (err: any) {
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: err instanceof Error ? err.message : 'Unknown error'
       };
     }
   }
@@ -270,7 +269,11 @@ export function initializeEnvironment(): void {
   
   if (!result.success) {
     console.error('❌ Environment validation failed:');
-    result.errors?.forEach(error => console.error(`  - ${error}`));
+    if (result.errors) {
+      result.errors.forEach((error: any) => {
+        console.error(`  - ${error}`);
+      });
+    }
     process.exit(1);
   }
 

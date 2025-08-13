@@ -177,7 +177,8 @@ export class SessionSecurity {
     const maxAge = this.DEFAULT_CONFIG.maxAge * 1000;
 
     // Clean up old session activity
-    for (const [userId, lastActivity] of this.sessionActivity.entries()) {
+    const sessionEntries = Array.from(this.sessionActivity.entries());
+    for (const [userId, lastActivity] of sessionEntries) {
       if (now - lastActivity > maxAge) {
         this.sessionActivity.delete(userId);
       }
@@ -193,7 +194,8 @@ export class SessionSecurity {
     const now = Date.now();
     const maxAge = 60 * 60 * 1000; // 1 hour
 
-    for (const [identifier, attempts] of this.loginAttempts.entries()) {
+    const attemptEntries = Array.from(this.loginAttempts.entries());
+    for (const [identifier, attempts] of attemptEntries) {
       // Remove if older than max age and not currently locked
       if (now - attempts.lastAttempt > maxAge && (!attempts.lockedUntil || now > attempts.lockedUntil)) {
         this.loginAttempts.delete(identifier);
@@ -213,7 +215,8 @@ export class SessionSecurity {
     let lockedAccounts = 0;
     let recentFailedAttempts = 0;
 
-    for (const attempts of this.loginAttempts.values()) {
+    const loginAttemptEntries = Array.from(this.loginAttempts.entries());
+    for (const [identifier, attempts] of loginAttemptEntries) {
       if (attempts.lockedUntil && now < attempts.lockedUntil) {
         lockedAccounts++;
       }
