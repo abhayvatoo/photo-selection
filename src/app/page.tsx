@@ -575,7 +575,7 @@ export default async function HomePage() {
 
       {/* Footer */}
       <footer className="relative z-10 bg-gray-50 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Camera className="h-6 w-6 text-black" />
@@ -584,12 +584,10 @@ export default async function HomePage() {
             <div className="flex space-x-6 text-sm text-gray-600">
               <Link href="/privacy" className="hover:text-black transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-black transition-colors">Terms</Link>
-              <Link href="/support" className="hover:text-black transition-colors">Support</Link>
-              <Link href="/documentation" className="hover:text-black transition-colors">Documentation</Link>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
-            © 2024 PhotoSelect. All rights reserved. Built with Next.js and ❤️
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+            2024 PhotoSelect. All rights reserved.
           </div>
         </div>
       </footer>
