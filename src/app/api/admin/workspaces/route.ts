@@ -4,10 +4,14 @@ import { prisma } from '@/lib/db';
 import { WorkspaceStatus } from '@prisma/client';
 import { z } from 'zod';
 import { CSRFProtection } from '@/lib/csrf';
-import { rateLimiters } from '@/lib/rate-limit';
+import { rateLimiters, applyRateLimit } from '@/lib/rate-limit';
 import { RequestLimits, requestLimits } from '@/lib/request-limits';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { withErrorHandler } from '@/lib/error-handling';
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
 
 // Input validation schema
 const createWorkspaceSchema = z.object({
@@ -49,13 +53,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('🔧 Workspace creation API called');
-      
       const user = await requireUploadPermission();
-      console.log('✅ User authenticated:', { id: user.id, role: user.role, email: user.email });
 
       const body = await request.json();
-      console.log('📝 Request body:', body);
       
       // Validate and sanitize input
       const validationResult = createWorkspaceSchema.safeParse(body);
@@ -71,27 +71,17 @@ export async function POST(request: NextRequest) {
 
       const { name, slug, description } = validationResult.data;
 
-    console.log('🔍 Checking for existing workspace with slug:', slug);
-    
     // Check if slug already exists
     const existingWorkspace = await prisma.workspace.findUnique({
       where: { slug },
     });
 
     if (existingWorkspace) {
-      console.log('❌ Workspace with slug already exists:', slug);
       return NextResponse.json(
         { error: 'Workspace with this slug already exists' },
         { status: 409 }
       );
     }
-
-    console.log('🚀 Creating workspace with data:', {
-      name,
-      slug,
-      description: description || null,
-      status: WorkspaceStatus.ACTIVE,
-    });
 
     // Create workspace
     const workspace = await prisma.workspace.create({
@@ -103,28 +93,41 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('✅ Workspace created successfully:', workspace);
-    return NextResponse.json(workspace, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      workspace
+    }, { status: 201 });
   } catch (error) {
-    console.error('❌ Error creating workspace:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    // Handle specific database errors without exposing internal details
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint')) {
+        return NextResponse.json(
+          { error: 'Workspace with this slug already exists' },
+          { status: 409 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { 
-        error: 'Failed to create workspace',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to create workspace' },
       { status: 500 }
     );
   }
+  }, requestLimits.general);
 }
 
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandler(async () => {
+    // 1. Rate limiting for admin operations
+    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // 2. Authentication and authorization check
     const user = await requireUploadPermission();
 
+    // 3. Fetch workspaces with sanitized data
     const workspaces = await prisma.workspace.findMany({
       include: {
         users: {
@@ -152,12 +155,10 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(workspaces);
-  } catch (error) {
-    console.error('Error fetching workspaces:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch workspaces' },
-      { status: 500 }
-    );
-  }
+    // 4. Return sanitized response
+    return NextResponse.json({
+      success: true,
+      workspaces
+    });
+  });
 }
