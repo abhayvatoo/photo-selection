@@ -114,9 +114,6 @@ export function Navigation() {
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
               Dashboard
             </Link>
-            <Link href="/workspaces" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-              Workspaces
-            </Link>
             <Link href="/documentation" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
               Docs
             </Link>
@@ -165,13 +162,6 @@ export function Navigation() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Dashboard
-            </Link>
-            <Link 
-              href="/workspaces" 
-              className="block text-gray-600 hover:text-gray-900 text-base font-medium py-2 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Workspaces
             </Link>
             <Link 
               href="/documentation" 

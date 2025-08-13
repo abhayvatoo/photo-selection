@@ -1,4 +1,4 @@
-import { Camera, Upload, Settings, Users, FolderOpen, BarChart3, Building2, UserCheck, Activity, Plus } from 'lucide-react';
+import { Camera, Upload, Settings, Users, FolderOpen, BarChart3, Building2, UserCheck, Activity, Plus, CreditCard, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { canUploadPhotos, canManageWorkspaces, canAccessWorkspace } from '@/lib/auth-utils';
@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { UserRole, WorkspaceStatus } from '@prisma/client';
 import { Navigation } from '@/components/Navigation';
 import { CreateWorkspaceButton } from '@/components/admin/CreateWorkspaceButton';
+import { getUserSubscription, getUserPlanLimits } from '@/lib/subscription';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -37,6 +38,10 @@ export default async function DashboardPage() {
   const canUpload = canUploadPhotos(user.role);
   const canManage = canManageWorkspaces(user.role);
   const hasWorkspaceAccess = workspace ? canAccessWorkspace(user.role, user.workspaceId, workspace.id) : false;
+
+  // Get user subscription and limits for billing section
+  const subscription = await getUserSubscription(user.id);
+  const limits = await getUserPlanLimits(user.id);
 
   // For SUPER_ADMIN, fetch platform-wide data
   let adminData = null;
@@ -172,116 +177,257 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* View Workspace */}
-          {workspace && hasWorkspaceAccess && (
-            <Link
-              href={`/workspace/${workspace.slug}`}
-              className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow group"
-            >
-              <div className="flex items-center mb-4">
-                <div className="bg-blue-100 p-3 rounded-lg group-hover:bg-blue-200 transition-colors">
-                  <FolderOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 ml-3">View Workspace</h3>
-              </div>
-              <p className="text-gray-600 mb-2">
-                Browse photos in {workspace.name}
-              </p>
-              <p className="text-sm text-blue-600 font-medium">
-                /{workspace.slug}
-              </p>
-            </Link>
-          )}
-
-
-
-
-
-          {/* Browse All Workspaces */}
-          <Link
-            href="/workspaces"
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow group"
-          >
-            <div className="flex items-center mb-4">
-              <div className="bg-orange-100 p-3 rounded-lg group-hover:bg-orange-200 transition-colors">
-                <Users className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 ml-3">Browse Workspaces</h3>
-            </div>
-            <p className="text-gray-600">
-              Explore available workspaces
-            </p>
-          </Link>
-        </div>
-
-        {/* Workspace Management for SUPER_ADMIN */}
-        {adminData && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        {/* Main Dashboard Sections */}
+        <div className="space-y-8">
+          
+          {/* Workspace Management Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Workspace Management</h2>
                 <p className="text-gray-600 text-sm mt-1">
-                  Manage all client workspaces and their users
+                  {user.role === UserRole.SUPER_ADMIN 
+                    ? "Manage all client workspaces and their users"
+                    : "Access and manage your workspaces"
+                  }
                 </p>
               </div>
-              <CreateWorkspaceButton />
+              {canManage && <CreateWorkspaceButton />}
             </div>
 
-            {adminData.workspaces.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-lg mb-2">No workspaces yet</div>
-                <p className="text-gray-500 text-sm">
-                  Create your first workspace to get started
+            {/* Current Workspace */}
+            {workspace && hasWorkspaceAccess && (
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Current Workspace</h3>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-semibold text-blue-900">{workspace.name}</h4>
+                      <p className="text-blue-700 text-sm">/{workspace.slug}</p>
+                    </div>
+                    <Link
+                      href={`/workspace/${workspace.slug}`}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                      <span>Open Workspace</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Browse All Workspaces */}
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
+                {user.role === UserRole.SUPER_ADMIN ? "All Workspaces" : "Available Workspaces"}
+              </h3>
+              <Link
+                href="/workspaces"
+                className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span>Browse All Workspaces</span>
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Billing & Subscription Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Billing & Subscription</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Manage your subscription and billing information
                 </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {adminData.workspaces.map((workspace) => (
-                  <div key={workspace.id} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{workspace.name}</h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        workspace.status === 'ACTIVE' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {workspace.status.toLowerCase()}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4" />
-                        <span>{(workspace as any)._count.users} members</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Camera className="h-4 w-4" />
-                        <span>{(workspace as any)._count.photos} photos</span>
-                      </div>
-                    </div>
+            </div>
 
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/workspace/${workspace.slug}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded text-sm hover:bg-blue-700 transition-colors"
-                      >
-                        View
-                      </Link>
-                      <Link
-                        href={`/workspace/${workspace.slug}`}
-                        className="flex-1 bg-gray-200 text-gray-700 text-center py-2 px-3 rounded text-sm hover:bg-gray-300 transition-colors"
-                      >
-                        Manage
-                      </Link>
+            {subscription && limits ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Current Plan */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className={`p-2 rounded-lg ${
+                      subscription.planType === 'ENTERPRISE' ? 'bg-purple-100' :
+                      subscription.planType === 'PROFESSIONAL' ? 'bg-blue-100' : 'bg-green-100'
+                    }`}>
+                      <CreditCard className={`h-5 w-5 ${
+                        subscription.planType === 'ENTERPRISE' ? 'text-purple-600' :
+                        subscription.planType === 'PROFESSIONAL' ? 'text-blue-600' : 'text-green-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {subscription.planType.charAt(0) + subscription.planType.slice(1).toLowerCase()} Plan
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {subscription.status === 'ACTIVE' ? 'Active' : subscription.status.toLowerCase()}
+                      </p>
                     </div>
                   </div>
-                ))}
+                  
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Workspaces:</span>
+                      <span className="font-medium">{limits.maxWorkspaces === -1 ? 'Unlimited' : limits.maxWorkspaces}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Photos per workspace:</span>
+                      <span className="font-medium">{limits.maxPhotosPerWorkspace === -1 ? 'Unlimited' : limits.maxPhotosPerWorkspace}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Users per workspace:</span>
+                      <span className="font-medium">{limits.maxUsersPerWorkspace === -1 ? 'Unlimited' : limits.maxUsersPerWorkspace}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Storage:</span>
+                      <span className="font-medium">{limits.maxStorageGB === -1 ? 'Unlimited' : `${limits.maxStorageGB}GB`}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Billing Actions */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Manage Subscription</h3>
+                    <div className="space-y-3">
+                      <Link
+                        href="/dashboard/billing"
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        <span>View Billing Details</span>
+                      </Link>
+                      
+                      {subscription.planType === 'STARTER' && (
+                        <Link
+                          href="/pricing"
+                          className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <span>Upgrade Plan</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : user.role === UserRole.SUPER_ADMIN ? (
+              <div className="text-center py-8">
+                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                  <div className="flex items-center justify-center mb-4">
+                    <Building2 className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Platform Administrator</h3>
+                  <p className="text-gray-600 mb-4">
+                    As the platform owner, you have unlimited access to all features. Customer subscriptions are managed through Stripe.
+                  </p>
+                  <div className="space-y-3">
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <span>View Customer Pricing</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+                  <div className="flex items-center justify-center mb-4">
+                    <CreditCard className="h-8 w-8 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Subscription Found</h3>
+                  <p className="text-gray-600 mb-4">
+                    You don't have an active subscription yet. Start with our free Starter plan or upgrade to unlock more features.
+                  </p>
+                  <div className="space-y-3">
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center space-x-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <span>View Pricing Plans</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        )}
+
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Quick Actions remain for other functionality */}
+        </div>
+
+          {/* Detailed Admin Workspace Management */}
+          {adminData && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Admin: All Workspace Details</h3>
+                <p className="text-gray-600 text-sm">
+                  Detailed view of all workspaces for platform administration
+                </p>
+              </div>
+
+              {adminData.workspaces.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 text-lg mb-2">No workspaces yet</div>
+                  <p className="text-gray-500 text-sm">
+                    Create your first workspace to get started
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {adminData.workspaces.map((workspace) => (
+                    <div key={workspace.id} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-gray-900">{workspace.name}</h4>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          workspace.status === 'ACTIVE' 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {workspace.status.toLowerCase()}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4" />
+                          <span>{(workspace as any)._count.users} members</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Camera className="h-4 w-4" />
+                          <span>{(workspace as any)._count.photos} photos</span>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/workspace/${workspace.slug}`}
+                          className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/workspace/${workspace.slug}`}
+                          className="flex-1 bg-gray-200 text-gray-700 text-center py-2 px-3 rounded text-sm hover:bg-gray-300 transition-colors"
+                        >
+                          Manage
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Account Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

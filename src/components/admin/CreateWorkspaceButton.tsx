@@ -1,16 +1,40 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Plus, X, AlertTriangle } from 'lucide-react';
+import { checkWorkspaceLimit } from '@/lib/subscription';
 
 export function CreateWorkspaceButton() {
+  const { data: session } = useSession();
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [limitCheck, setLimitCheck] = useState<{ allowed: boolean; current: number; limit: number } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
   });
+
+  useEffect(() => {
+    if (session?.user?.id && showModal) {
+      checkLimit();
+    }
+  }, [session?.user?.id, showModal]);
+
+  const checkLimit = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const response = await fetch('/api/user/workspace-limit');
+      if (response.ok) {
+        const data = await response.json();
+        setLimitCheck(data);
+      }
+    } catch (error) {
+      console.error('Error checking workspace limit:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +113,37 @@ export function CreateWorkspaceButton() {
               </button>
             </div>
 
+            {/* Workspace Limit Warning */}
+            {limitCheck && !limitCheck.allowed && (
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-800">
+                      Workspace Limit Reached
+                    </p>
+                    <p className="text-sm text-orange-700 mt-1">
+                      You've reached your limit of {limitCheck.limit} workspace{limitCheck.limit === 1 ? '' : 's'}. 
+                      <a href="/pricing" className="underline hover:no-underline ml-1">
+                        Upgrade your plan
+                      </a> to create more workspaces.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Workspace Usage Info */}
+            {limitCheck && limitCheck.allowed && limitCheck.limit !== -1 && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">
+                    {limitCheck.current} of {limitCheck.limit} workspaces used
+                  </span>
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -146,10 +201,12 @@ export function CreateWorkspaceButton() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || (limitCheck ? !limitCheck.allowed : false)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? 'Creating...' : 'Create Workspace'}
+                  {isLoading ? 'Creating...' : 
+                   (limitCheck && !limitCheck.allowed) ? 'Limit Reached' : 
+                   'Create Workspace'}
                 </button>
               </div>
             </form>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Upload, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Plus, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useSocket } from '@/hooks/useSocket';
 
 interface PhotoUploadProps {
@@ -18,10 +18,46 @@ export default function PhotoUpload({ workspaceId, onUpload }: PhotoUploadProps)
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [photoLimit, setPhotoLimit] = useState<{ allowed: boolean; current: number; limit: number } | null>(null);
+
+  useEffect(() => {
+    if (session?.user?.id && workspaceId) {
+      checkPhotoLimit();
+    }
+  }, [session?.user?.id, workspaceId]);
+
+  const checkPhotoLimit = async () => {
+    if (!session?.user?.id || !workspaceId) return;
+    
+    try {
+      const response = await fetch(`/api/user/photo-limit?workspaceId=${workspaceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPhotoLimit(data);
+      }
+    } catch (error) {
+      console.error('Error checking photo limit:', error);
+    }
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || !session?.user?.id) return;
+
+    // Check photo limit before uploading
+    if (photoLimit && !photoLimit.allowed) {
+      setError(`Photo limit reached. You can only have ${photoLimit.limit} photos in this workspace.`);
+      return;
+    }
+
+    // Check if adding these files would exceed the limit
+    if (photoLimit && photoLimit.limit !== -1) {
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      if (photoLimit.current + imageFiles.length > photoLimit.limit) {
+        setError(`Adding ${imageFiles.length} photos would exceed your limit of ${photoLimit.limit} photos per workspace.`);
+        return;
+      }
+    }
 
     setIsUploading(true);
     setUploadSuccess(false);
@@ -82,9 +118,40 @@ export default function PhotoUpload({ workspaceId, onUpload }: PhotoUploadProps)
 
   return (
     <div className="space-y-4">
+      {/* Photo Limit Warning */}
+      {photoLimit && !photoLimit.allowed && (
+        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orange-800">
+                Photo Limit Reached
+              </p>
+              <p className="text-sm text-orange-700 mt-1">
+                You've reached your limit of {photoLimit.limit} photos in this workspace. 
+                <a href="/pricing" className="underline hover:no-underline ml-1">
+                  Upgrade your plan
+                </a> to upload more photos.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Usage Info */}
+      {photoLimit && photoLimit.allowed && photoLimit.limit !== -1 && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            <span className="font-medium">
+              {photoLimit.current} of {photoLimit.limit} photos used in this workspace
+            </span>
+          </p>
+        </div>
+      )}
+
       <button
         onClick={handleClick}
-        disabled={isUploading || !session?.user}
+        disabled={isUploading || !session?.user || (photoLimit ? !photoLimit.allowed : false)}
         className={`w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
           isUploading
             ? 'border-blue-300 bg-blue-50 cursor-not-allowed'

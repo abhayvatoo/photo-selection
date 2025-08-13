@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserRole } from '@prisma/client';
+import { AlertTriangle } from 'lucide-react';
 
 interface InviteUsersProps {
   userRole: UserRole;
@@ -13,6 +14,27 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
   const [role, setRole] = useState<UserRole>(UserRole.USER);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [userLimit, setUserLimit] = useState<{ allowed: boolean; current: number; limit: number } | null>(null);
+
+  useEffect(() => {
+    if (workspaceId) {
+      checkUserLimit();
+    }
+  }, [workspaceId]);
+
+  const checkUserLimit = async () => {
+    if (!workspaceId) return;
+    
+    try {
+      const response = await fetch(`/api/user/user-limit?workspaceId=${workspaceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserLimit(data);
+      }
+    } catch (error) {
+      console.error('Error checking user limit:', error);
+    }
+  };
 
   const canInvite = userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;
 
@@ -35,6 +57,15 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !role) return;
+
+    // Check user limit before sending invitation
+    if (userLimit && !userLimit.allowed) {
+      setMessage({
+        type: 'error',
+        text: `User limit reached. You can only have ${userLimit.limit} users in this workspace.`
+      });
+      return;
+    }
 
     setLoading(true);
     setMessage(null);
@@ -84,6 +115,37 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Users</h3>
+      
+      {/* User Limit Warning */}
+      {userLimit && !userLimit.allowed && (
+        <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orange-800">
+                User Limit Reached
+              </p>
+              <p className="text-sm text-orange-700 mt-1">
+                You've reached your limit of {userLimit.limit} users in this workspace. 
+                <a href="/pricing" className="underline hover:no-underline ml-1">
+                  Upgrade your plan
+                </a> to invite more users.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Usage Info */}
+      {userLimit && userLimit.allowed && userLimit.limit !== -1 && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            <span className="font-medium">
+              {userLimit.current} of {userLimit.limit} users in this workspace
+            </span>
+          </p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
