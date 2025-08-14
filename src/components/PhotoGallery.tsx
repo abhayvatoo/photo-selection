@@ -10,7 +10,6 @@ import PhotoPreviewModal from './PhotoPreviewModal';
 import PhotoGalleryToolbar from './PhotoGalleryToolbar';
 import ErrorBoundary from './ErrorBoundary';
 import { PAGINATION, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
-import { validationResponses } from '@/lib/validation-utils';
 
 interface Photo {
   id: number;

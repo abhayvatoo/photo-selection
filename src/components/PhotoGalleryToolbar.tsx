@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Settings, Trash2, Download, X, CheckCircle2 } from 'lucide-react';
 
 interface PhotoGalleryToolbarProps {

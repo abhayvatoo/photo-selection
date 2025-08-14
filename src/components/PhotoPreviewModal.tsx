@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { X, Download, Heart, User } from 'lucide-react';
 import Image from 'next/image';
 import { UI } from '@/lib/constants';
