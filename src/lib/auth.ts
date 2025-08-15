@@ -94,11 +94,35 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
+      console.log('🔄 NextAuth redirect called with:', { url, baseUrl });
+      
+      // Handle magic link authentication - redirect to dashboard
+      if (url.includes('/api/auth/callback/email') || url.includes('callbackUrl')) {
+        console.log('📧 Magic link detected, redirecting to dashboard');
+        return `${baseUrl}/dashboard`;
+      }
+      
+      // Handle sign-in success - redirect to dashboard
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        console.log('🏠 Sign-in success, redirecting to dashboard');
+        return `${baseUrl}/dashboard`;
+      }
+      
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url.startsWith("/")) {
+        console.log('📍 Relative URL detected:', url);
+        return `${baseUrl}${url}`;
+      }
+      
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      if (new URL(url).origin === baseUrl) {
+        console.log('🌐 Same origin URL detected:', url);
+        return url;
+      }
+      
+      // Default redirect after successful authentication
+      console.log('🎯 Default redirect to dashboard');
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {

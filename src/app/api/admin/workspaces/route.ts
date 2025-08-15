@@ -21,69 +21,84 @@ const createWorkspaceSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  return RequestLimits.withRequestLimits(async () => {
-    // Apply rate limiting
-    const rateLimitResult = await rateLimiters.sensitive.isRateLimited(request);
-    if (rateLimitResult.limited) {
+  try {
+    console.log('🚀 POST /api/admin/workspaces - Starting request processing');
+
+    // 1. Authentication check
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      console.log('❌ No authentication found');
       return NextResponse.json(
-        { error: 'Too many requests, please try again later.' },
-        { status: 429 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
-    // Increment rate limit counter
-    await rateLimiters.sensitive.increment(request);
+    console.log('✅ User authenticated:', session.user.id);
 
-    try {
-      // Get session for CSRF validation
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id) {
-        return NextResponse.json(
-          { error: 'Authentication required' },
-          { status: 401 }
-        );
-      }
+    // 2. Get user from database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, role: true, email: true }
+    });
 
-      // Validate CSRF token
-      const csrfToken = request.headers.get('x-csrf-token');
-      if (!csrfToken || !await CSRFProtection.validateToken(session.user.id, csrfToken)) {
-        return NextResponse.json(
-          { error: 'Invalid CSRF token' },
-          { status: 403 }
-        );
-      }
+    if (!dbUser) {
+      console.log('❌ User not found in database');
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
-      const user = await requireUploadPermission();
+    console.log('✅ User found:', dbUser.role);
 
-      const body = await request.json();
-      
-      // Validate and sanitize input
-      const validationResult = createWorkspaceSchema.safeParse(body);
-      if (!validationResult.success) {
-        return NextResponse.json(
-          { 
-            error: 'Invalid input data',
-            details: validationResult.error.issues.map((e: any) => e.message)
-          },
-          { status: 400 }
-        );
-      }
+    // 3. Check permissions - SUPER_ADMIN can create workspaces
+    if (dbUser.role !== 'SUPER_ADMIN' && dbUser.role !== 'BUSINESS_OWNER') {
+      console.log('❌ Insufficient permissions:', dbUser.role);
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
-      const { name, slug, description } = validationResult.data;
+    console.log('✅ Permission check passed');
 
-    // Check if slug already exists
+    // 4. Parse request body
+    const body = await request.json();
+    console.log('✅ Request body parsed:', body);
+    
+    // 5. Validate input
+    const validationResult = createWorkspaceSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.log('❌ Validation failed:', validationResult.error);
+      return NextResponse.json(
+        { 
+          error: 'Invalid input data',
+          details: validationResult.error.issues.map((e: any) => e.message)
+        },
+        { status: 400 }
+      );
+    }
+
+    const { name, slug, description } = validationResult.data;
+    console.log('✅ Input validated:', { name, slug, description });
+
+    // 6. Check if slug already exists
     const existingWorkspace = await prisma.workspace.findUnique({
       where: { slug },
     });
 
     if (existingWorkspace) {
+      console.log('❌ Workspace slug already exists:', slug);
       return NextResponse.json(
         { error: 'Workspace with this slug already exists' },
         { status: 409 }
       );
     }
 
-    // Create workspace
+    console.log('✅ Slug is available');
+
+    // 7. Create workspace
     const workspace = await prisma.workspace.create({
       data: {
         name,
@@ -93,12 +108,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('✅ Workspace created successfully:', workspace.id);
+
     return NextResponse.json({
       success: true,
       workspace
     }, { status: 201 });
+
   } catch (error) {
-    // Handle specific database errors without exposing internal details
+    console.error('❌ API Route Error:', error);
+    
+    // Handle specific database errors
     if (error instanceof Error) {
       if (error.message.includes('Unique constraint')) {
         return NextResponse.json(
@@ -109,11 +129,10 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to create workspace' },
+      { error: 'Failed to create workspace', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
-  }, requestLimits.general);
 }
 
 export async function GET(request: NextRequest) {

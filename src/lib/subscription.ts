@@ -65,6 +65,16 @@ export async function getUserSubscription(userId: string) {
 }
 
 export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
+  // First check if user is SUPER_ADMIN - they get unlimited access
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true }
+  });
+
+  if (user?.role === 'SUPER_ADMIN') {
+    return PLAN_LIMITS.ENTERPRISE; // Unlimited access for SUPER_ADMIN
+  }
+
   const subscription = await getUserSubscription(userId);
   
   if (!subscription) {

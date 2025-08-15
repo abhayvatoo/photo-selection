@@ -43,10 +43,15 @@ export function CreateWorkspaceButton() {
     console.log('🔧 CreateWorkspaceButton: Submitting form with data:', formData);
 
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/auth/csrf');
+      const { csrfToken } = await csrfResponse.json();
+
       const response = await fetch('/api/admin/workspaces', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
         },
         body: JSON.stringify(formData),
       });
@@ -56,6 +61,10 @@ export function CreateWorkspaceButton() {
       if (response.ok) {
         const result = await response.json();
         console.log('✅ CreateWorkspaceButton: Workspace created successfully:', result);
+        
+        // Show success notification
+        alert(`✅ Workspace "${result.workspace.name}" created successfully!\n\nYou can now access it at: /workspace/${result.workspace.slug}`);
+        
         setShowModal(false);
         setFormData({ name: '', slug: '', description: '' });
         // Refresh the page to show new workspace
@@ -153,7 +162,7 @@ export function CreateWorkspaceButton() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   placeholder="e.g., John & Jane Wedding"
                   required
                 />
@@ -167,7 +176,7 @@ export function CreateWorkspaceButton() {
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   placeholder="john-jane-wedding"
                   pattern="[a-z0-9-]+"
                   title="Only lowercase letters, numbers, and hyphens allowed"
@@ -185,7 +194,7 @@ export function CreateWorkspaceButton() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   rows={3}
                   placeholder="Brief description of this workspace..."
                 />

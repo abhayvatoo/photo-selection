@@ -36,18 +36,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { workspaceId: string } }
 ) {
-  return withErrorHandler(async () => {
-    // 1. Rate limiting for photo listing
-    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
+  try {
+    console.log('🚀 GET /api/photos/workspace/[workspaceId] - Starting request processing');
 
-    // 2. Authentication check
+    // 1. Authentication check
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
+      console.log('❌ No authentication found');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    const userId = session.user.id;
+    console.log('✅ User authenticated:', userId);
 
     // 3. Input validation
     const validationResult = workspacePhotosSchema.safeParse({ workspaceId: params.workspaceId });

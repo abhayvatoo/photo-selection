@@ -43,5 +43,6 @@ export const config = {
     "/workspace/:path*",
     "/api/photos/upload",
     "/api/admin/:path*",
+    "/dashboard/:path*",
   ],
 };

@@ -19,7 +19,7 @@ export default function SignIn() {
     try {
       const result = await signIn('email', {
         email,
-        redirect: false,
+        callbackUrl: '/dashboard',
       });
 
       if (result?.ok) {
