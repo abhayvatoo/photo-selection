@@ -198,89 +198,109 @@ export default async function DashboardPage() {
 
           {/* Main Dashboard Sections */}
           <div className="space-y-8">
-            {/* Workspace Management - Large Unified Tile */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-8">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
-                      <Building2 className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                        Workspace Management
-                      </h2>
-                      <p className="text-gray-600">
-                        {user.role === UserRole.SUPER_ADMIN
-                          ? "Manage all client workspaces and their users"
-                          : "Access and manage your workspaces"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    {/* Current Workspace */}
-                    {workspace && hasWorkspaceAccess && (
-                      <div className="bg-white/60 rounded-lg p-4 border border-blue-100">
-                        <h3 className="text-sm font-medium text-gray-600 mb-2">Current Workspace</h3>
-                        <div className="flex items-center">
-                          <div className="bg-blue-500 w-3 h-3 rounded-full mr-3"></div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{workspace.name}</p>
-                            <p className="text-sm text-gray-600">/{workspace.slug}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Workspace Stats */}
-                    {adminData && (
-                      <div className="bg-white/60 rounded-lg p-4 border border-blue-100">
-                        <h3 className="text-sm font-medium text-gray-600 mb-3">Workspace Overview</h3>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Total Workspaces</span>
-                            <span className="font-bold text-gray-900">{adminData.stats.totalWorkspaces}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Active Workspaces</span>
-                            <span className="font-bold text-green-600">{adminData.stats.activeWorkspaces}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* For non-admin users, show current workspace only */}
-                    {!adminData && workspace && hasWorkspaceAccess && (
-                      <div className="bg-white/60 rounded-lg p-4 border border-blue-100">
-                        <h3 className="text-sm font-medium text-gray-600 mb-2">Quick Access</h3>
-                        <p className="text-sm text-gray-600">Access your workspace to manage photos and selections</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Clear Action Buttons */}
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href="/workspaces"
-                      className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      <FolderOpen className="h-5 w-5" />
-                      <span>Manage All Workspaces</span>
-                    </Link>
-                    
-                    {/* Quick access to current workspace */}
-                    {workspace && hasWorkspaceAccess && (
-                      <Link
-                        href={`/workspace/${workspace.slug}`}
-                        className="inline-flex items-center space-x-2 bg-white text-blue-600 border border-blue-200 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium"
-                      >
-                        <Camera className="h-5 w-5" />
-                        <span>Open Current Workspace</span>
-                      </Link>
-                    )}
-                  </div>
+            {/* Workspace Management Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Workspace Management
+                  </h2>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {user.role === UserRole.SUPER_ADMIN
+                      ? "Manage all client workspaces and their users"
+                      : "Access and manage your workspaces"}
+                  </p>
                 </div>
+              </div>
+
+              {/* Information Cards */}
+              <div className="mb-6">
+                {/* Current Workspace - Full Width */}
+                {workspace && hasWorkspaceAccess && (
+                  <div className="bg-gray-50 rounded-lg p-6 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-blue-100 p-3 rounded-lg">
+                          <Building2 className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 mb-1">Current Workspace</h3>
+                          <p className="text-xl font-bold text-gray-900">{workspace.name}</p>
+                          <p className="text-sm text-gray-600">/{workspace.slug}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          Active
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Workspace Stats - Full Width for Admins */}
+                {adminData && (
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="bg-green-100 p-3 rounded-lg">
+                        <FolderOpen className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Workspace Overview</h3>
+                        <p className="text-xl font-bold text-gray-900">Workspace Statistics</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-gray-900">{adminData.stats.totalWorkspaces}</p>
+                        <p className="text-sm text-gray-600 mt-1">Total Workspaces</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-green-600">{adminData.stats.activeWorkspaces}</p>
+                        <p className="text-sm text-gray-600 mt-1">Active Workspaces</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* For non-admin users, show workspace info full width */}
+                {!adminData && workspace && hasWorkspaceAccess && (
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-purple-100 p-3 rounded-lg">
+                        <Camera className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Quick Access</h3>
+                        <p className="text-xl font-bold text-gray-900">Ready to use</p>
+                        <p className="text-sm text-gray-600">Manage photos and selections in your workspace</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons - Centered */}
+              <div className="flex flex-col items-center space-y-3">
+                <Link
+                  href="/workspaces"
+                  className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <FolderOpen className="h-5 w-5" />
+                  <span>Manage All Workspaces</span>
+                </Link>
+                
+                {/* Quick access to current workspace */}
+                {workspace && hasWorkspaceAccess && (
+                  <Link
+                    href={`/workspace/${workspace.slug}`}
+                    className="inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    <Camera className="h-5 w-5" />
+                    <span>Open Current Workspace</span>
+                  </Link>
+                )}
               </div>
             </div>
 

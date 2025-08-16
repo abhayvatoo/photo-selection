@@ -6,6 +6,7 @@ import { Camera, Users, Calendar, ArrowRight, Plus, ArrowLeft } from "lucide-rea
 import Link from "next/link";
 import { Navigation } from "@/components/Navigation";
 import { CreateWorkspaceButton } from "@/components/admin/CreateWorkspaceButton";
+import { WorkspaceMenu } from "@/components/WorkspaceMenu";
 import { UserRole } from "@prisma/client";
 
 export default async function WorkspacesPage() {
@@ -139,59 +140,74 @@ export default async function WorkspacesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {workspaces.map((workspace) => (
-                <Link
+                <div
                   key={workspace.id}
-                  href={`/workspace/${workspace.slug}`}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 p-6 group"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200 p-6 relative"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {workspace.name}
-                      </h3>
-                      {workspace.description && (
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          {workspace.description}
-                        </p>
-                      )}
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  {/* Workspace Management Menu */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <WorkspaceMenu workspace={workspace} userRole={userRole} />
                   </div>
 
-                  {/* Workspace Stats */}
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="h-4 w-4 mr-2" />
-                      {workspace._count.users} member
-                      {workspace._count.users !== 1 ? "s" : ""}
+                  {/* Workspace Content - Non-clickable */}
+                  <div className="pr-8">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          {/* Status Dot */}
+                          <div className="flex items-center">
+                            {workspace.status === "ACTIVE" ? (
+                              <div className="relative">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <div className="absolute -inset-0.5 w-3 h-3 bg-green-400 rounded-full animate-ping opacity-30"></div>
+                              </div>
+                            ) : (
+                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            )}
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {workspace.name}
+                          </h3>
+                        </div>
+                        {workspace.description && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            {workspace.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Camera className="h-4 w-4 mr-2" />
-                      {workspace._count.photos} photo
-                      {workspace._count.photos !== 1 ? "s" : ""}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Updated{" "}
-                      {new Date(workspace.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
 
-                  {/* Status Badge */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        workspace.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800"
-                          : workspace.status === "INACTIVE"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {workspace.status.toLowerCase()}
-                    </span>
+                    {/* Workspace Stats */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Users className="h-4 w-4 mr-2" />
+                        {workspace._count.users} member
+                        {workspace._count.users !== 1 ? "s" : ""}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Camera className="h-4 w-4 mr-2" />
+                        {workspace._count.photos} photo
+                        {workspace._count.photos !== 1 ? "s" : ""}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Updated{" "}
+                        {new Date(workspace.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <Link
+                        href={`/workspace/${workspace.slug}`}
+                        className="inline-flex items-center space-x-2 w-full justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        <span>Open Workspace</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}

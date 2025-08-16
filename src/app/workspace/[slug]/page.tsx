@@ -103,11 +103,11 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
                 <Link
-                  href="/dashboard"
+                  href="/workspaces"
                   className="flex items-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors mr-4"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Back to Dashboard</span>
+                  <span className="font-medium">Back to Workspaces</span>
                 </Link>
                 <div className="w-px h-6 bg-gray-300 mr-4"></div>
                 <h1 className="text-xl font-semibold text-gray-900">
