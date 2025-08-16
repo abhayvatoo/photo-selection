@@ -13,7 +13,7 @@ export function useSocket(userId?: string, userName?: string) {
     if (!userId || !userName) return;
 
     // Initialize socket connection
-    const socket: SocketType = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+    const socket: SocketType = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000');
     socketRef.current = socket;
 
     socket.on('connect', () => {

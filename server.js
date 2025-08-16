@@ -1,13 +1,10 @@
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-// Note: We'll import socket server dynamically to handle TypeScript compilation
-let initializeSocket;
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = process.env.PORT || 3000;
-const socketPort = process.env.SOCKET_PORT || 3001;
 
 console.log(`🚀 Starting server in ${dev ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
 if (dev) {
@@ -31,26 +28,115 @@ app.prepare().then(() => {
     }
   });
 
-  // Create separate HTTP server for Socket.io
-  const socketServer = createServer();
-  
-  // Dynamically import and initialize socket server
+  // Initialize Socket.IO on the same server
+  let io;
   try {
-    const socketModule = require('./dist/src/lib/socket-server.js');
-    initializeSocket = socketModule.initializeSocket;
-    const io = initializeSocket(socketServer);
+    const { Server } = require('socket.io');
+    const { PrismaClient } = require('@prisma/client');
+    
+    const prisma = new PrismaClient();
+    
+    io = new Server(server, {
+      cors: {
+        origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000'],
+        methods: ['GET', 'POST'],
+      },
+    });
+
+    io.on('connection', (socket) => {
+      console.log('User connected:', socket.id);
+
+      socket.on('joinRoom', async ({ userId, userName }) => {
+        socket.data.userId = userId;
+        socket.data.userName = userName;
+        
+        // Join a general room for all users
+        await socket.join('photo-selection');
+        
+        // Broadcast user connection to others
+        socket.to('photo-selection').emit('userConnected', { userId, userName });
+        
+        console.log(`User ${userName} (${userId}) joined the room`);
+      });
+
+      socket.on('selectPhoto', async ({ photoId, userId }) => {
+        try {
+          // Convert photoId to number since Photo model uses Int
+          const photoIdInt = parseInt(photoId);
+          
+          // Check if selection already exists
+          const existingSelection = await prisma.photoSelection.findUnique({
+            where: {
+              photoId_userId: {
+                photoId: photoIdInt,
+                userId,
+              },
+            },
+          });
+
+          let selected = false;
+          
+          if (existingSelection) {
+            // Remove selection
+            await prisma.photoSelection.delete({
+              where: { id: existingSelection.id },
+            });
+            selected = false;
+          } else {
+            // Add selection
+            await prisma.photoSelection.create({
+              data: {
+                photoId: photoIdInt,
+                userId,
+              },
+            });
+            selected = true;
+          }
+
+          // Broadcast the selection change to all users
+          io.to('photo-selection').emit('photoSelected', {
+            photoId,
+            userId,
+            userName: socket.data.userName || 'Unknown',
+            selected,
+          });
+
+          console.log(`Photo ${photoId} ${selected ? 'selected' : 'deselected'} by ${socket.data.userName}`);
+        } catch (error) {
+          console.error('Error handling photo selection:', error);
+        }
+      });
+
+      socket.on('uploadPhoto', (data) => {
+        // Broadcast new photo upload notification to all users
+        socket.to('photo-selection').emit('photoUploaded', { 
+          workspaceId: data.workspaceId,
+          message: data.message 
+        });
+      });
+
+      socket.on('disconnect', () => {
+        if (socket.data.userId) {
+          socket.to('photo-selection').emit('userDisconnected', { 
+            userId: socket.data.userId 
+          });
+        }
+        console.log('User disconnected:', socket.id);
+      });
+    });
+
+    console.log('✅ Socket.IO initialized successfully');
   } catch (error) {
-    console.log('Socket server will be available after build. Running without real-time features for now.');
+    console.log('⚠️ Socket.IO initialization failed:', error.message);
+    console.log('Server will run without real-time features.');
   }
 
-  // Start servers
+  // Start server
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`> Next.js ready on http://${hostname}:${port}`);
-  });
-
-  socketServer.listen(socketPort, (err) => {
-    if (err) throw err;
-    console.log(`> Socket.io server ready on http://${hostname}:${socketPort}`);
+    if (io) {
+      console.log(`> Socket.io ready on http://${hostname}:${port}/socket.io`);
+    }
   });
 });

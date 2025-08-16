@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 // Input validation schema
 const workspacePhotosSchema = z.object({
   workspaceId: z.string()
-    .uuid('Invalid workspace ID format')
+    .regex(/^c[a-z0-9]{24}$/, 'Invalid workspace ID format - must be a valid CUID')
 });
 
 // Pagination and filtering schema
@@ -59,7 +59,6 @@ export async function GET(
     }
 
     const { workspaceId } = validationResult.data;
-    const userId = session.user.id;
     const userRole = (session.user as any)?.role as UserRole;
 
     // 4. Query parameter validation
@@ -160,5 +159,9 @@ export async function GET(
       // Generic error for unexpected cases
       return NextResponse.json({ error: 'Failed to fetch workspace photos' }, { status: 500 });
     }
-  });
+
+  } catch (error) {
+    console.error('❌ Error in GET /api/photos/workspace/[workspaceId]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

@@ -1,25 +1,27 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import { redirect } from 'next/navigation';
-import { Camera, Users, Calendar, ArrowRight, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { Navigation } from '@/components/Navigation';
-import { CreateWorkspaceButton } from '@/components/admin/CreateWorkspaceButton';
-import { UserRole } from '@prisma/client';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { Camera, Users, Calendar, ArrowRight, Plus, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { Navigation } from "@/components/Navigation";
+import { CreateWorkspaceButton } from "@/components/admin/CreateWorkspaceButton";
+import { UserRole } from "@prisma/client";
 
 export default async function WorkspacesPage() {
   const session = await getServerSession(authOptions);
-  
+
+  console.log("Session:", session);
+
   if (!session?.user) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
 
   const userRole = (session.user as any)?.role as UserRole;
 
   // Fetch workspaces based on user role
   let workspaces;
-  
+
   if (userRole === UserRole.SUPER_ADMIN) {
     // Super admin can see all workspaces
     workspaces = await prisma.workspace.findMany({
@@ -44,7 +46,7 @@ export default async function WorkspacesPage() {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updatedAt: "desc" },
     });
   } else {
     // Other users can only see workspaces they're assigned to
@@ -83,40 +85,54 @@ export default async function WorkspacesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div style={{ paddingTop: '64px' }}>
+      <div style={{ paddingTop: "64px" }}>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8 flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Workspaces</h1>
-              <p className="text-gray-600">
-                {userRole === UserRole.SUPER_ADMIN 
-                  ? "Manage all workspaces across the platform"
-                  : userRole === UserRole.BUSINESS_OWNER
-                  ? "Manage your photography workspaces and client projects"
-                  : "Access your assigned workspace and photo selections"
-                }
-              </p>
+          {/* Header with Back Button */}
+          <div className="mb-8">
+            <div className="flex items-center mb-4">
+              <Link
+                href="/dashboard"
+                className="flex items-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors mr-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span className="font-medium">Back to Dashboard</span>
+              </Link>
             </div>
-            {(userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER) && workspaces.length > 0 && (
-              <CreateWorkspaceButton />
-            )}
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Workspaces
+                </h1>
+                <p className="text-gray-600">
+                  {userRole === UserRole.SUPER_ADMIN
+                    ? "Manage all workspaces across the platform"
+                    : userRole === UserRole.BUSINESS_OWNER
+                    ? "Manage your photography workspaces and client projects"
+                    : "Access your assigned workspace and photo selections"}
+                </p>
+              </div>
+              {(userRole === UserRole.SUPER_ADMIN ||
+                userRole === UserRole.BUSINESS_OWNER) &&
+                workspaces.length > 0 && <CreateWorkspaceButton />}
+            </div>
           </div>
 
           {/* Workspaces Grid */}
           {workspaces.length === 0 ? (
             <div className="text-center py-12">
               <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No workspaces found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No workspaces found
+              </h3>
               <p className="text-gray-600 mb-6">
-                {userRole === UserRole.SUPER_ADMIN 
+                {userRole === UserRole.SUPER_ADMIN
                   ? "No workspaces have been created yet."
                   : userRole === UserRole.BUSINESS_OWNER
                   ? "You haven't been assigned to any workspaces yet."
-                  : "You haven't been assigned to a workspace yet. Contact your photographer."
-                }
+                  : "You haven't been assigned to a workspace yet. Contact your photographer."}
               </p>
-              {(userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER) && (
+              {(userRole === UserRole.SUPER_ADMIN ||
+                userRole === UserRole.BUSINESS_OWNER) && (
                 <CreateWorkspaceButton />
               )}
             </div>
@@ -146,27 +162,32 @@ export default async function WorkspacesPage() {
                   <div className="space-y-2">
                     <div className="flex items-center text-sm text-gray-600">
                       <Users className="h-4 w-4 mr-2" />
-                      {workspace._count.users} member{workspace._count.users !== 1 ? 's' : ''}
+                      {workspace._count.users} member
+                      {workspace._count.users !== 1 ? "s" : ""}
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <Camera className="h-4 w-4 mr-2" />
-                      {workspace._count.photos} photo{workspace._count.photos !== 1 ? 's' : ''}
+                      {workspace._count.photos} photo
+                      {workspace._count.photos !== 1 ? "s" : ""}
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="h-4 w-4 mr-2" />
-                      Updated {new Date(workspace.updatedAt).toLocaleDateString()}
+                      Updated{" "}
+                      {new Date(workspace.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
 
                   {/* Status Badge */}
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      workspace.status === 'ACTIVE'
-                        ? 'bg-green-100 text-green-800'
-                        : workspace.status === 'INACTIVE'
-                        ? 'bg-gray-100 text-gray-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        workspace.status === "ACTIVE"
+                          ? "bg-green-100 text-green-800"
+                          : workspace.status === "INACTIVE"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
                       {workspace.status.toLowerCase()}
                     </span>
                   </div>
@@ -178,7 +199,9 @@ export default async function WorkspacesPage() {
           {/* Quick Actions for Business Owners */}
           {userRole === UserRole.BUSINESS_OWNER && workspaces.length > 0 && (
             <div className="mt-12 bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Quick Actions
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Link
                   href="/workspaces"
@@ -186,30 +209,42 @@ export default async function WorkspacesPage() {
                 >
                   <Camera className="h-8 w-8 text-blue-600 mr-3" />
                   <div>
-                    <div className="font-medium text-gray-900">Upload Photos</div>
-                    <div className="text-sm text-gray-600">Go to workspace to upload photos</div>
+                    <div className="font-medium text-gray-900">
+                      Upload Photos
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Go to workspace to upload photos
+                    </div>
                   </div>
                 </Link>
-                
+
                 <Link
                   href="/workspaces"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
                 >
                   <Users className="h-8 w-8 text-green-600 mr-3" />
                   <div>
-                    <div className="font-medium text-gray-900">Invite Clients</div>
-                    <div className="text-sm text-gray-600">Manage invitations in workspace</div>
+                    <div className="font-medium text-gray-900">
+                      Invite Clients
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Manage invitations in workspace
+                    </div>
                   </div>
                 </Link>
-                
+
                 <Link
                   href="/dashboard"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
                 >
                   <Plus className="h-8 w-8 text-purple-600 mr-3" />
                   <div>
-                    <div className="font-medium text-gray-900">Manage Settings</div>
-                    <div className="text-sm text-gray-600">Configure workspace settings</div>
+                    <div className="font-medium text-gray-900">
+                      Manage Settings
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Configure workspace settings
+                    </div>
                   </div>
                 </Link>
               </div>
