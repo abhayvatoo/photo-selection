@@ -40,7 +40,6 @@ export function CreateWorkspaceButton() {
     e.preventDefault();
     setIsLoading(true);
 
-    console.log('🔧 CreateWorkspaceButton: Submitting form with data:', formData);
 
     try {
       // Get CSRF token
@@ -56,11 +55,9 @@ export function CreateWorkspaceButton() {
         body: JSON.stringify(formData),
       });
 
-      console.log('📡 CreateWorkspaceButton: API response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ CreateWorkspaceButton: Workspace created successfully:', result);
         
         // Show success notification
         alert(`✅ Workspace "${result.workspace.name}" created successfully!\n\nYou can now access it at: /workspace/${result.workspace.slug}`);

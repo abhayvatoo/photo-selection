@@ -17,12 +17,11 @@ export function useSocket(userId?: string, userName?: string) {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Connected to socket server');
       socket.emit('joinRoom', { userId, userName });
     });
 
     socket.on('disconnect', () => {
-      console.log('Disconnected from socket server');
+      // Socket disconnected
     });
 
     return () => {

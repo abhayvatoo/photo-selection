@@ -7,9 +7,6 @@ const hostname = 'localhost';
 const port = process.env.PORT || 3000;
 
 console.log(`🚀 Starting server in ${dev ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
-if (dev) {
-  console.log('📊 Using PostgreSQL database + local storage (bucket folder)');
-}
 
 // Initialize Next.js app
 const app = next({ dev, hostname, port });
@@ -44,7 +41,6 @@ app.prepare().then(() => {
     });
 
     io.on('connection', (socket) => {
-      console.log('User connected:', socket.id);
 
       socket.on('joinRoom', async ({ userId, userName }) => {
         socket.data.userId = userId;
@@ -56,7 +52,6 @@ app.prepare().then(() => {
         // Broadcast user connection to others
         socket.to('photo-selection').emit('userConnected', { userId, userName });
         
-        console.log(`User ${userName} (${userId}) joined the room`);
       });
 
       socket.on('selectPhoto', async ({ photoId, userId }) => {
@@ -101,7 +96,6 @@ app.prepare().then(() => {
             selected,
           });
 
-          console.log(`Photo ${photoId} ${selected ? 'selected' : 'deselected'} by ${socket.data.userName}`);
         } catch (error) {
           console.error('Error handling photo selection:', error);
         }
@@ -121,7 +115,6 @@ app.prepare().then(() => {
             userId: socket.data.userId 
           });
         }
-        console.log('User disconnected:', socket.id);
       });
     });
 

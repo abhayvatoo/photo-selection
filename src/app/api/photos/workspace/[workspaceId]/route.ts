@@ -37,17 +37,14 @@ export async function GET(
   { params }: { params: { workspaceId: string } }
 ) {
   try {
-    console.log('🚀 GET /api/photos/workspace/[workspaceId] - Starting request processing');
 
     // 1. Authentication check
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.log('❌ No authentication found');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const userId = session.user.id;
-    console.log('✅ User authenticated:', userId);
 
     // 3. Input validation
     const validationResult = workspacePhotosSchema.safeParse({ workspaceId: params.workspaceId });

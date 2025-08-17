@@ -24,7 +24,6 @@ export async function uploadPhoto(
 ): Promise<StorageResult> {
   if (isGCSConfigured()) {
     try {
-      console.log('📤 Uploading to Google Cloud Storage...');
       const result = await uploadToGCS(file, originalName, mimeType);
       return {
         ...result,
@@ -36,7 +35,6 @@ export async function uploadPhoto(
     }
   }
 
-  console.log('📁 Uploading to local storage...');
   const result = await uploadPhotoLocally(file, originalName, mimeType);
   return {
     ...result,

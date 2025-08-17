@@ -14,8 +14,8 @@ export const authOptions: NextAuthOptions = {
     warn(code) {
       console.warn('[NextAuth Warning]', code);
     },
-    debug(code, metadata) {
-      console.log('[NextAuth Debug]', code, metadata);
+    debug(_code, _metadata) {
+      // Debug logging disabled for cleaner output
     },
   },
   providers: [
@@ -36,7 +36,6 @@ export const authOptions: NextAuthOptions = {
           },
       from: process.env.EMAIL_FROM || 'noreply@photoselect.dev',
       async sendVerificationRequest({ identifier, url, provider }) {
-        console.log('🔍 sendVerificationRequest called with:', { identifier, url: url.substring(0, 50) + '...' });
         
         if (process.env.NODE_ENV === 'development') {
           console.log('\n🔗 MAGIC LINK FOR DEVELOPMENT:');
@@ -78,7 +77,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile: _profile }) {
       // Make first user a super admin (platform owner)
       if (account?.provider === "google" || account?.provider === "email") {
         const userCount = await prisma.user.count();
@@ -94,34 +93,28 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      console.log('🔄 NextAuth redirect called with:', { url, baseUrl });
       
       // Handle magic link authentication - redirect to dashboard
       if (url.includes('/api/auth/callback/email') || url.includes('callbackUrl')) {
-        console.log('📧 Magic link detected, redirecting to dashboard');
         return `${baseUrl}/dashboard`;
       }
       
       // Handle sign-in success - redirect to dashboard
       if (url === baseUrl || url === `${baseUrl}/`) {
-        console.log('🏠 Sign-in success, redirecting to dashboard');
         return `${baseUrl}/dashboard`;
       }
       
       // Allows relative callback URLs
       if (url.startsWith("/")) {
-        console.log('📍 Relative URL detected:', url);
         return `${baseUrl}${url}`;
       }
       
       // Allows callback URLs on the same origin
       if (new URL(url).origin === baseUrl) {
-        console.log('🌐 Same origin URL detected:', url);
         return url;
       }
       
       // Default redirect after successful authentication
-      console.log('🎯 Default redirect to dashboard');
       return `${baseUrl}/dashboard`;
     },
   },

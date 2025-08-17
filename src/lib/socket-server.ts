@@ -32,7 +32,6 @@ export function initializeSocket(httpServer: HTTPServer) {
   );
 
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
 
     socket.on('joinRoom', async ({ userId, userName }) => {
       socket.data.userId = userId;
@@ -44,7 +43,6 @@ export function initializeSocket(httpServer: HTTPServer) {
       // Broadcast user connection to others
       socket.to('photo-selection').emit('userConnected', { userId, userName });
       
-      console.log(`User ${userName} (${userId}) joined the room`);
     });
 
     socket.on('selectPhoto', async ({ photoId, userId }) => {
@@ -89,7 +87,6 @@ export function initializeSocket(httpServer: HTTPServer) {
           selected,
         });
 
-        console.log(`Photo ${photoId} ${selected ? 'selected' : 'deselected'} by ${socket.data.userName}`);
       } catch (error) {
         console.error('Error handling photo selection:', error);
       }
@@ -109,7 +106,6 @@ export function initializeSocket(httpServer: HTTPServer) {
           userId: socket.data.userId 
         });
       }
-      console.log('User disconnected:', socket.id);
     });
   });
 
