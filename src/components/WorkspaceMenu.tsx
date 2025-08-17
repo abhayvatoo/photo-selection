@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { MoreVertical, Edit, Settings, Archive, Copy, Trash2, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ConfirmationModal } from './ConfirmationModal';
+import { DuplicateWorkspaceModal } from './DuplicateWorkspaceModal';
+import { useToast } from '@/hooks/useToast';
 
 interface Workspace {
   id: string;
@@ -18,74 +21,138 @@ interface WorkspaceMenuProps {
 
 export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateName] = useState(`${workspace.name} Copy`);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleEditWorkspace = () => {
-    // For now, we'll show an alert and redirect to workspace settings
-    alert(`Edit workspace: ${workspace.name}\n\nThis will open the workspace settings page.`);
     router.push(`/workspace/${workspace.slug}/settings`);
     setIsOpen(false);
   };
 
   const handleManageMembers = () => {
-    alert(`Manage members for: ${workspace.name}\n\nThis will open the members management page.`);
     router.push(`/workspace/${workspace.slug}/members`);
     setIsOpen(false);
   };
 
   const handleWorkspaceSettings = () => {
-    alert(`Workspace settings for: ${workspace.name}\n\nThis will open the settings page.`);
     router.push(`/workspace/${workspace.slug}/settings`);
     setIsOpen(false);
   };
 
-  const handleChangeStatus = async () => {
+  const handleChangeStatus = () => {
+    setShowStatusModal(true);
+    setIsOpen(false);
+  };
+
+  const confirmStatusChange = async () => {
     const newStatus = workspace.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const action = workspace.status === 'ACTIVE' ? 'deactivate' : 'activate';
     
-    if (confirm(`Are you sure you want to ${action} "${workspace.name}"?`)) {
-      try {
-        const response = await fetch(`/api/workspaces/${workspace.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        });
+    setLoading(true);
+    try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/auth/csrf');
+      const { csrfToken } = await csrfResponse.json();
 
-        if (response.ok) {
-          alert(`Workspace "${workspace.name}" has been ${action}d successfully.`);
-          router.refresh();
-        } else {
-          alert('Failed to update workspace status. Please try again.');
-        }
-      } catch (error) {
-        alert('An error occurred. Please try again.');
+      const response = await fetch(`/api/workspaces/${workspace.id}/status`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        showToast(`Workspace "${workspace.name}" has been ${action}d successfully.`, 'success');
+        router.refresh();
+      } else {
+        const error = await response.json();
+        showToast(error.error || 'Failed to update workspace status. Please try again.', 'error');
       }
+    } catch (error) {
+      showToast('An error occurred. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+      setShowStatusModal(false);
     }
-    setIsOpen(false);
   };
 
   const handleDuplicateWorkspace = () => {
-    const newName = prompt(`Enter a name for the duplicate workspace:`, `${workspace.name} Copy`);
-    if (newName && newName.trim()) {
-      alert(`Duplicating workspace: ${workspace.name}\nNew name: ${newName}\n\nThis feature will create a copy with the same settings.`);
-      // TODO: Implement workspace duplication API
-    }
+    setShowDuplicateModal(true);
     setIsOpen(false);
   };
 
-  const handleDeleteWorkspace = () => {
-    const confirmText = `DELETE ${workspace.name}`;
-    const userInput = prompt(
-      `⚠️ WARNING: This action cannot be undone!\n\nThis will permanently delete "${workspace.name}" and all its data including:\n- All photos\n- All user selections\n- All workspace settings\n\nTo confirm deletion, type: ${confirmText}`
-    );
+  const confirmDuplicate = async (newName: string) => {
+    setLoading(true);
+    try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/auth/csrf');
+      const { csrfToken } = await csrfResponse.json();
 
-    if (userInput === confirmText) {
-      alert(`Workspace "${workspace.name}" will be deleted.\n\nThis would call the deletion API.`);
-      // TODO: Implement workspace deletion API
-    } else if (userInput !== null) {
-      alert('Deletion cancelled - confirmation text did not match.');
+      const response = await fetch(`/api/workspaces/${workspace.id}/duplicate`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
+        body: JSON.stringify({ name: newName })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showToast(`Workspace "${newName}" created successfully.`, 'success');
+        router.refresh();
+      } else {
+        const error = await response.json();
+        showToast(error.error || 'Failed to duplicate workspace. Please try again.', 'error');
+      }
+    } catch (error) {
+      showToast('An error occurred. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+      setShowDuplicateModal(false);
     }
+  };
+
+  const handleDeleteWorkspace = () => {
+    setShowDeleteModal(true);
     setIsOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    setLoading(true);
+    try {
+      // Get CSRF token
+      const csrfResponse = await fetch('/api/auth/csrf');
+      const { csrfToken } = await csrfResponse.json();
+
+      const response = await fetch(`/api/workspaces/${workspace.id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        }
+      });
+
+      if (response.ok) {
+        showToast(`Workspace "${workspace.name}" has been deleted successfully.`, 'success');
+        router.push('/dashboard'); // Redirect to dashboard after deletion
+      } else {
+        const error = await response.json();
+        showToast(error.error || 'Failed to delete workspace. Please try again.', 'error');
+      }
+    } catch (error) {
+      showToast('An error occurred. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+    }
   };
 
   // Only show menu for admins and business owners
@@ -164,6 +231,54 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           </button>
         </div>
       )}
+
+      {/* Status Change Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        onConfirm={confirmStatusChange}
+        title={`${workspace.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} Workspace`}
+        message={`Are you sure you want to ${workspace.status === 'ACTIVE' ? 'deactivate' : 'activate'} "${workspace.name}"?
+
+${workspace.status === 'ACTIVE' 
+  ? 'Deactivating will make this workspace inaccessible to all users until reactivated.' 
+  : 'Activating will restore access to this workspace for all users.'}`}
+        confirmButtonText={workspace.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+        isDestructive={workspace.status === 'ACTIVE'}
+        loading={loading}
+      />
+
+      {/* Duplicate Workspace Modal */}
+      <DuplicateWorkspaceModal
+        isOpen={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        onConfirm={confirmDuplicate}
+        workspaceName={workspace.name}
+        defaultName={duplicateName}
+        loading={loading}
+      />
+
+      {/* Delete Workspace Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Workspace"
+        message={`⚠️ WARNING: This action cannot be undone!
+
+This will permanently delete "${workspace.name}" and all its data including:
+• All photos and files
+• All user selections and preferences
+• All workspace settings and configurations
+• All member access and permissions
+
+This workspace and its data will be completely removed from the system.`}
+        confirmButtonText="Delete Workspace"
+        requiresTypedConfirmation={true}
+        confirmationPhrase={`DELETE ${workspace.name}`}
+        isDestructive={true}
+        loading={loading}
+      />
     </div>
   );
 }

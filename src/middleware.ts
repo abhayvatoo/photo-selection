@@ -9,9 +9,11 @@ export default withAuth(
     const { pathname } = req.nextUrl;
 
     if (token) {  
-      // Upload routes - accessible by SUPER_ADMIN and BUSINESS_OWNER
+      // Upload routes - accessible by SUPER_ADMIN, BUSINESS_OWNER, and STAFF
       if (pathname.startsWith("/upload") || pathname.includes("/api/photos/upload")) {
-        if (token?.role !== UserRole.SUPER_ADMIN && token?.role !== UserRole.BUSINESS_OWNER) {
+        if (token?.role !== UserRole.SUPER_ADMIN && 
+            token?.role !== UserRole.BUSINESS_OWNER && 
+            token?.role !== UserRole.STAFF) {
           return NextResponse.redirect(new URL("/unauthorized", req.url));
         }
       }

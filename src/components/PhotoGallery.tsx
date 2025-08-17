@@ -79,7 +79,7 @@ export default function PhotoGallery({
   
   // Memoized computed values for performance
   const canManage = useMemo(() => 
-    userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER',
+    userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER' || userRole === 'STAFF',
     [userRole]
   );
 
@@ -472,7 +472,7 @@ export default function PhotoGallery({
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 mb-4">📷 No photos uploaded yet</div>
-        {userRole === 'BUSINESS_OWNER' && (
+        {(userRole === 'BUSINESS_OWNER' || userRole === 'STAFF') && (
           <p className="text-sm text-gray-400">
             Upload photos to get started with client selections
           </p>
