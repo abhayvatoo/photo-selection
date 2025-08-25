@@ -60,7 +60,7 @@ const PhotoCard = memo(function PhotoCard({
   onDownload,
   onDelete,
 }: PhotoCardProps) {
-  const userSelection = photo.selections.find(s => s.userId === userId);
+  const userSelection = photo.selections.find((s) => s.userId === userId);
   const isSelectedByUser = !!userSelection;
   const selectionCount = photo.selections.length;
 
@@ -75,10 +75,13 @@ const PhotoCard = memo(function PhotoCard({
   /**
    * Handles management mode selection toggle
    */
-  const handleToggleSelection = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onToggleSelection(photo.id);
-  }, [onToggleSelection, photo.id]);
+  const handleToggleSelection = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+      onToggleSelection(photo.id);
+    },
+    [onToggleSelection, photo.id]
+  );
 
   /**
    * Handles photo preview
@@ -118,7 +121,7 @@ const PhotoCard = memo(function PhotoCard({
       )}
 
       {/* Photo Image */}
-      <div 
+      <div
         className="relative aspect-square cursor-pointer"
         onClick={handlePreview}
       >
@@ -129,7 +132,7 @@ const PhotoCard = memo(function PhotoCard({
           className="object-cover transition-transform duration-200 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
-        
+
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
           <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -142,7 +145,7 @@ const PhotoCard = memo(function PhotoCard({
         <h3 className="text-sm font-medium text-gray-900 truncate mb-1">
           {photo.originalName}
         </h3>
-        
+
         {/* Uploaded by */}
         <p className="text-xs text-gray-500 mb-2">
           by {photo.uploadedBy.name || photo.uploadedBy.email}
@@ -161,8 +164,8 @@ const PhotoCard = memo(function PhotoCard({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } ${isSelecting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart 
-                className={`w-3 h-3 ${isSelectedByUser ? 'fill-current' : ''}`} 
+              <Heart
+                className={`w-3 h-3 ${isSelectedByUser ? 'fill-current' : ''}`}
               />
               {isSelectedByUser ? 'Selected' : 'Select'}
             </button>

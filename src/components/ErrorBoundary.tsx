@@ -41,7 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Update state with error info
     this.setState({
       error,
@@ -85,13 +85,14 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className="mb-4">
               <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
             </div>
-            
+
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Something went wrong
             </h2>
-            
+
             <p className="text-gray-600 mb-6">
-              We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+              We encountered an unexpected error. Please try refreshing the page
+              or contact support if the problem persists.
             </p>
 
             <div className="space-y-3">
@@ -146,6 +147,6 @@ export function withErrorBoundary<P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }

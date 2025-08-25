@@ -41,7 +41,11 @@ class ApiService {
     return data.users;
   }
 
-  async createUser(name: string, email: string, color?: string): Promise<ApiUser> {
+  async createUser(
+    name: string,
+    email: string,
+    color?: string
+  ): Promise<ApiUser> {
     const response = await fetch(`${this.baseUrl}/users`, {
       method: 'POST',
       headers: {
@@ -49,11 +53,11 @@ class ApiService {
       },
       body: JSON.stringify({ name, email, color }),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to create user');
     }
-    
+
     const data = await response.json();
     return data.user;
   }
@@ -63,12 +67,12 @@ class ApiService {
     if (filterUsers && filterUsers.length > 0) {
       params.append('filterUsers', filterUsers.join(','));
     }
-    
+
     const response = await fetch(`${this.baseUrl}/photos?${params}`);
     if (!response.ok) {
       throw new Error('Failed to fetch photos');
     }
-    
+
     const data = await response.json();
     return data.photos;
   }
@@ -91,7 +95,10 @@ class ApiService {
     return data.photo;
   }
 
-  async togglePhotoSelection(photoId: string, userId: string): Promise<{
+  async togglePhotoSelection(
+    photoId: string,
+    userId: string
+  ): Promise<{
     selected: boolean;
     photo: ApiPhoto;
     message: string;

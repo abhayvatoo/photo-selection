@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Check, Loader2 } from 'lucide-react';
 import { PLAN_LIMITS, formatPrice, getPlanPrice } from '@/lib/subscription';
+import { useToast } from '@/hooks/useToast';
+import { csrfPostJSON } from '@/lib/csrf-fetch';
 
 const plans = [
   {
@@ -46,14 +48,15 @@ interface PricingSectionProps {
 
 export default function PricingSection({
   showHeader = true,
-  headerTitle = "Simple, transparent pricing",
-  headerSubtitle = "Choose the perfect plan for your photography business",
-  className = "",
-  compact = false
+  headerTitle = 'Simple, transparent pricing',
+  headerSubtitle = 'Choose the perfect plan for your photography business',
+  className = '',
+  compact = false,
 }: PricingSectionProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const handleSelectPlan = async (planKey: string) => {
     if (!session) {
@@ -64,12 +67,8 @@ export default function PricingSection({
     setLoading(planKey);
 
     try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ planType: planKey }),
+      const response = await csrfPostJSON('/api/stripe/create-checkout-session', {
+        planType: planKey
       });
 
       const data = await response.json();
@@ -86,7 +85,7 @@ export default function PricingSection({
       }
     } catch (error) {
       console.error('Error selecting plan:', error);
-      alert('Failed to select plan. Please try again.');
+      showToast('Failed to select plan. Please try again.', 'error');
     } finally {
       setLoading(null);
     }
@@ -102,23 +101,27 @@ export default function PricingSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {showHeader && (
           <div className="text-center">
-            <h2 className={`font-bold text-gray-900 ${compact ? 'text-3xl' : 'text-4xl sm:text-5xl'}`}>
+            <h2
+              className={`font-bold text-gray-900 ${compact ? 'text-3xl' : 'text-4xl sm:text-5xl'}`}
+            >
               {headerTitle}
             </h2>
-            <p className={`mt-4 text-gray-600 ${compact ? 'text-lg' : 'text-xl'}`}>
+            <p
+              className={`mt-4 text-gray-600 ${compact ? 'text-lg' : 'text-xl'}`}
+            >
               {headerSubtitle}
             </p>
           </div>
         )}
 
-        <div className={`${showHeader ? 'mt-16' : ''} grid grid-cols-1 gap-8 lg:grid-cols-3`}>
+        <div
+          className={`${showHeader ? 'mt-16' : ''} grid grid-cols-1 gap-8 lg:grid-cols-3`}
+        >
           {plans.map((plan) => (
             <div
               key={plan.key}
               className={`relative rounded-2xl border ${
-                plan.popular
-                  ? 'border-blue-500 shadow-lg'
-                  : 'border-gray-200'
+                plan.popular ? 'border-blue-500 shadow-lg' : 'border-gray-200'
               } bg-white p-8`}
             >
               {plan.popular && (
@@ -130,7 +133,9 @@ export default function PricingSection({
               )}
 
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {plan.name}
+                </h3>
                 <p className="mt-2 text-gray-600">{plan.description}</p>
                 <div className="mt-4">
                   <span className="text-4xl font-bold text-gray-900">
@@ -156,14 +161,16 @@ export default function PricingSection({
                     <Check className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
                     <span className="text-gray-700">
                       {formatLimit(plan.limits.maxPhotosPerWorkspace, 'photo')}
-                      {plan.limits.maxPhotosPerWorkspace === 1 ? '' : 's'} per workspace
+                      {plan.limits.maxPhotosPerWorkspace === 1 ? '' : 's'} per
+                      workspace
                     </span>
                   </li>
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
                     <span className="text-gray-700">
                       {formatLimit(plan.limits.maxUsersPerWorkspace, 'user')}
-                      {plan.limits.maxUsersPerWorkspace === 1 ? '' : 's'} per workspace
+                      {plan.limits.maxUsersPerWorkspace === 1 ? '' : 's'} per
+                      workspace
                     </span>
                   </li>
                   <li className="flex items-start">
@@ -208,10 +215,17 @@ export default function PricingSection({
         {!compact && (
           <div className="mt-16 text-center">
             <p className="text-gray-600">
-              All plans include a 14-day free trial. No credit card required for Starter plan.
+              All plans include a 14-day free trial. No credit card required for
+              Starter plan.
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              Need something custom? <a href="mailto:support@photoselection.com" className="text-blue-600 hover:underline">Contact us</a>
+              Need something custom?{' '}
+              <a
+                href="mailto:support@photoselection.com"
+                className="text-blue-600 hover:underline"
+              >
+                Contact us
+              </a>
             </p>
           </div>
         )}

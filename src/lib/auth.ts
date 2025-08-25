@@ -24,19 +24,19 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy',
     }),
     EmailProvider({
-      server: process.env.NODE_ENV === 'development' 
-        ? undefined  // Don't specify server in development to trigger sendVerificationRequest
-        : {
-            host: process.env.EMAIL_SERVER_HOST,
-            port: process.env.EMAIL_SERVER_PORT,
-            auth: {
-              user: process.env.EMAIL_SERVER_USER,
-              pass: process.env.EMAIL_SERVER_PASSWORD,
+      server:
+        process.env.NODE_ENV === 'development'
+          ? undefined // Don't specify server in development to trigger sendVerificationRequest
+          : {
+              host: process.env.EMAIL_SERVER_HOST,
+              port: process.env.EMAIL_SERVER_PORT,
+              auth: {
+                user: process.env.EMAIL_SERVER_USER,
+                pass: process.env.EMAIL_SERVER_PASSWORD,
+              },
             },
-          },
       from: process.env.EMAIL_FROM || 'noreply@photoselect.dev',
       async sendVerificationRequest({ identifier, url, provider }) {
-        
         if (process.env.NODE_ENV === 'development') {
           console.log('\n🔗 MAGIC LINK FOR DEVELOPMENT:');
           console.log(`📧 Email: ${identifier}`);
@@ -50,7 +50,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   callbacks: {
     async jwt({ token, user, account }) {
@@ -59,13 +59,13 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
         });
-        
+
         if (dbUser) {
           token.role = dbUser.role;
           token.workspaceId = dbUser.workspaceId || undefined;
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -79,48 +79,50 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account, profile: _profile }) {
       // Make first user a super admin (platform owner)
-      if (account?.provider === "google" || account?.provider === "email") {
+      if (account?.provider === 'google' || account?.provider === 'email') {
         const userCount = await prisma.user.count();
-        
+
         if (userCount === 0) {
           // First user becomes super admin (platform owner)
           await prisma.user.update({
             where: { id: user.id },
-            data: { role: "SUPER_ADMIN" },
+            data: { role: 'SUPER_ADMIN' },
           });
         }
       }
       return true;
     },
     async redirect({ url, baseUrl }) {
-      
       // Handle magic link authentication - redirect to dashboard
-      if (url.includes('/api/auth/callback/email') || url.includes('callbackUrl')) {
+      if (
+        url.includes('/api/auth/callback/email') ||
+        url.includes('callbackUrl')
+      ) {
         return `${baseUrl}/dashboard`;
       }
-      
+
       // Handle sign-in success - redirect to dashboard
       if (url === baseUrl || url === `${baseUrl}/`) {
         return `${baseUrl}/dashboard`;
       }
-      
+
       // Allows relative callback URLs
-      if (url.startsWith("/")) {
+      if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
       }
-      
+
       // Allows callback URLs on the same origin
       if (new URL(url).origin === baseUrl) {
         return url;
       }
-      
+
       // Default redirect after successful authentication
       return `${baseUrl}/dashboard`;
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: '/auth/signin',
+    error: '/auth/error',
   },
   events: {
     async createUser({ user }) {
@@ -128,7 +130,7 @@ export const authOptions: NextAuthOptions = {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          color: "#3B82F6",
+          color: '#3B82F6',
         },
       });
     },

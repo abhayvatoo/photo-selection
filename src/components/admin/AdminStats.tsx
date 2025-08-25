@@ -55,7 +55,9 @@ export function AdminStats({ stats }: AdminStatsProps) {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {stat.title}
+                </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {stat.value.toLocaleString()}
                 </p>

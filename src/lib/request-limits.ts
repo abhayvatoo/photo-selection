@@ -36,7 +36,10 @@ export class RequestLimits {
     const finalConfig = { ...this.DEFAULT_CONFIG, ...config };
 
     // Check URL length
-    if (finalConfig.maxUrlLength && request.url.length > finalConfig.maxUrlLength) {
+    if (
+      finalConfig.maxUrlLength &&
+      request.url.length > finalConfig.maxUrlLength
+    ) {
       return {
         valid: false,
         error: 'Request URL too long',
@@ -61,10 +64,10 @@ export class RequestLimits {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       const contentType = request.headers.get('content-type');
       if (contentType && finalConfig.allowedContentTypes) {
-        const isAllowed = finalConfig.allowedContentTypes.some(allowed =>
+        const isAllowed = finalConfig.allowedContentTypes.some((allowed) =>
           contentType.toLowerCase().includes(allowed.toLowerCase())
         );
-        
+
         if (!isAllowed) {
           return {
             valid: false,
@@ -76,9 +79,11 @@ export class RequestLimits {
     }
 
     // Check header size (approximate)
-    const headerSize = Array.from(request.headers.entries())
-      .reduce((total, [key, value]) => total + key.length + value.length + 4, 0); // +4 for ': ' and '\r\n'
-    
+    const headerSize = Array.from(request.headers.entries()).reduce(
+      (total, [key, value]) => total + key.length + value.length + 4,
+      0
+    ); // +4 for ': ' and '\r\n'
+
     if (finalConfig.maxHeaderSize && headerSize > finalConfig.maxHeaderSize) {
       return {
         valid: false,
@@ -110,7 +115,7 @@ export class RequestLimits {
   ) {
     return async (request: NextRequest): Promise<NextResponse> => {
       const validation = await this.validateRequest(request, config);
-      
+
       if (!validation.valid) {
         console.warn(`[REQUEST_LIMITS] Blocked request: ${validation.error}`, {
           method: request.method,
@@ -122,12 +127,12 @@ export class RequestLimits {
         });
 
         const statusCode = validation.code === 'BODY_TOO_LARGE' ? 413 : 400;
-        
+
         return NextResponse.json(
-          { 
+          {
             error: validation.error,
             code: validation.code,
-          }, 
+          },
           { status: statusCode }
         );
       }
@@ -156,10 +161,10 @@ export class RequestLimits {
         if (error instanceof Error && error.message === 'Request timeout') {
           console.warn(`[REQUEST_LIMITS] Request timeout after ${timeoutMs}ms`);
           return NextResponse.json(
-            { 
+            {
               error: 'Request timeout',
               code: 'REQUEST_TIMEOUT',
-            }, 
+            },
             { status: 408 }
           );
         }
@@ -188,7 +193,10 @@ export const requestLimits = {
   auth: {
     maxBodySize: 4096, // 4KB
     timeout: 10000, // 10 seconds
-    allowedContentTypes: ['application/json', 'application/x-www-form-urlencoded'],
+    allowedContentTypes: [
+      'application/json',
+      'application/x-www-form-urlencoded',
+    ],
   },
 
   // Stripe/payment endpoints

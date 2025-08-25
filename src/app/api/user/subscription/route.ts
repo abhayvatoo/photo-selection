@@ -12,7 +12,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // 1. Rate limiting for subscription data access
-    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
+    const rateLimitResponse = await applyRateLimit(
+      request,
+      rateLimiters.general
+    );
     if (rateLimitResponse) {
       return rateLimitResponse;
     }
@@ -20,7 +23,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // 2. Authentication check
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
@@ -32,10 +38,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
       // 4. Return sanitized subscription data
       if (!subscription) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: true,
           subscription: null,
-          message: 'No active subscription found'
+          message: 'No active subscription found',
         });
       }
 
@@ -51,31 +57,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           id: subscription.user.id,
           email: subscription.user.email,
           name: subscription.user.name,
-          role: subscription.user.role
-        }
+          role: subscription.user.role,
+        },
       };
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        subscription: sanitizedSubscription
+        subscription: sanitizedSubscription,
       });
-
     } catch (error) {
       // Handle specific subscription errors
       if (error instanceof Error) {
         if (error.message.includes('user not found')) {
-          return NextResponse.json({ error: 'User not found' }, { status: 404 });
+          return NextResponse.json(
+            { error: 'User not found' },
+            { status: 404 }
+          );
         }
         if (error.message.includes('stripe')) {
-          return NextResponse.json({ error: 'Payment service unavailable' }, { status: 503 });
+          return NextResponse.json(
+            { error: 'Payment service unavailable' },
+            { status: 503 }
+          );
         }
       }
-      
+
       // Generic error for unexpected cases
-      return NextResponse.json({ error: 'Failed to fetch subscription information' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch subscription information' },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error('Subscription API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

@@ -1,8 +1,8 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { UserRole } from '@prisma/client';
+import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
@@ -12,18 +12,18 @@ export async function getCurrentUser() {
 export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/auth/signin");
+    redirect('/auth/signin');
   }
   return user;
 }
 
 export async function requireRole(allowedRoles: UserRole[]) {
   const user = await requireAuth();
-  
+
   if (!allowedRoles.includes(user.role)) {
-    redirect("/unauthorized");
+    redirect('/unauthorized');
   }
-  
+
   return user;
 }
 
@@ -37,17 +37,17 @@ export async function requireUploadPermission() {
 
 export async function requireWorkspaceAccess(workspaceSlug: string) {
   const user = await requireAuth();
-  
+
   // Super admin can access any workspace
   if (user.role === UserRole.SUPER_ADMIN) {
     return user;
   }
-  
+
   // Check if user belongs to the workspace
   if (user.workspaceSlug !== workspaceSlug) {
-    redirect("/unauthorized");
+    redirect('/unauthorized');
   }
-  
+
   return user;
 }
 
@@ -58,11 +58,11 @@ export async function getUserWithWorkspace(userId: string) {
       workspace: true,
       uploadedPhotos: {
         take: 5,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       },
       selections: {
         take: 5,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           photo: true,
         },
@@ -83,12 +83,16 @@ export function canManageWorkspaces(userRole: UserRole): boolean {
   return hasRole(userRole, [UserRole.SUPER_ADMIN]);
 }
 
-export function canAccessWorkspace(userRole: UserRole, userWorkspaceId: string | undefined, targetWorkspaceId: string): boolean {
+export function canAccessWorkspace(
+  userRole: UserRole,
+  userWorkspaceId: string | undefined,
+  targetWorkspaceId: string
+): boolean {
   // Super admin can access any workspace
   if (userRole === UserRole.SUPER_ADMIN) {
     return true;
   }
-  
+
   // User can only access their own workspace
   return userWorkspaceId === targetWorkspaceId;
 }

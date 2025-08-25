@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 console.log(`🚀 Starting server in ${dev ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
 
 // Initialize Next.js app
+
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
@@ -30,35 +31,38 @@ app.prepare().then(() => {
   try {
     const { Server } = require('socket.io');
     const { PrismaClient } = require('@prisma/client');
-    
+
     const prisma = new PrismaClient();
-    
+
     io = new Server(server, {
       cors: {
-        origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000'],
+        origin:
+          process.env.NODE_ENV === 'production'
+            ? false
+            : ['http://localhost:3000'],
         methods: ['GET', 'POST'],
       },
     });
 
     io.on('connection', (socket) => {
-
       socket.on('joinRoom', async ({ userId, userName }) => {
         socket.data.userId = userId;
         socket.data.userName = userName;
-        
+
         // Join a general room for all users
         await socket.join('photo-selection');
-        
+
         // Broadcast user connection to others
-        socket.to('photo-selection').emit('userConnected', { userId, userName });
-        
+        socket
+          .to('photo-selection')
+          .emit('userConnected', { userId, userName });
       });
 
       socket.on('selectPhoto', async ({ photoId, userId }) => {
         try {
           // Convert photoId to number since Photo model uses Int
           const photoIdInt = parseInt(photoId);
-          
+
           // Check if selection already exists
           const existingSelection = await prisma.photoSelection.findUnique({
             where: {
@@ -70,7 +74,7 @@ app.prepare().then(() => {
           });
 
           let selected = false;
-          
+
           if (existingSelection) {
             // Remove selection
             await prisma.photoSelection.delete({
@@ -95,7 +99,6 @@ app.prepare().then(() => {
             userName: socket.data.userName || 'Unknown',
             selected,
           });
-
         } catch (error) {
           console.error('Error handling photo selection:', error);
         }
@@ -103,16 +106,16 @@ app.prepare().then(() => {
 
       socket.on('uploadPhoto', (data) => {
         // Broadcast new photo upload notification to all users
-        socket.to('photo-selection').emit('photoUploaded', { 
+        socket.to('photo-selection').emit('photoUploaded', {
           workspaceId: data.workspaceId,
-          message: data.message 
+          message: data.message,
         });
       });
 
       socket.on('disconnect', () => {
         if (socket.data.userId) {
-          socket.to('photo-selection').emit('userDisconnected', { 
-            userId: socket.data.userId 
+          socket.to('photo-selection').emit('userDisconnected', {
+            userId: socket.data.userId,
           });
         }
       });

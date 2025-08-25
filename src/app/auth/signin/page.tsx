@@ -3,11 +3,13 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { Camera, Mail, Chrome } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const { showToast } = useToast();
 
   // Removed automatic redirect logic to prevent redirect loops
   // Let NextAuth handle the authentication flow naturally
@@ -25,11 +27,11 @@ export default function SignIn() {
       if (result?.ok) {
         setEmailSent(true);
       } else {
-        alert('Failed to send sign-in email. Please try again.');
+        showToast('Failed to send sign-in email. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Sign-in error:', error);
-      alert('An error occurred. Please try again.');
+      showToast('An error occurred. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -41,7 +43,7 @@ export default function SignIn() {
       await signIn('google', { callbackUrl: '/' });
     } catch (error) {
       console.error('Google sign-in error:', error);
-      alert('Failed to sign in with Google. Please try again.');
+      showToast('Failed to sign in with Google. Please try again.', 'error');
       setIsLoading(false);
     }
   };
@@ -59,7 +61,7 @@ export default function SignIn() {
             Check your email
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            We've sent a sign-in link to <strong>{email}</strong>
+            We&apos;ve sent a sign-in link to <strong>{email}</strong>
           </p>
         </div>
 
@@ -67,7 +69,8 @@ export default function SignIn() {
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-4">
-                Click the link in your email to sign in. You can close this window.
+                Click the link in your email to sign in. You can close this
+                window.
               </p>
               <button
                 onClick={() => {
@@ -119,14 +122,19 @@ export default function SignIn() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with email
+                </span>
               </div>
             </div>
 
             {/* Email Sign In */}
             <form onSubmit={handleEmailSignIn} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address
                 </label>
                 <div className="mt-1">
@@ -158,7 +166,8 @@ export default function SignIn() {
 
           <div className="mt-6">
             <div className="text-center text-xs text-gray-500">
-              By signing in, you agree to our Terms of Service and Privacy Policy
+              By signing in, you agree to our Terms of Service and Privacy
+              Policy
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ const loadBucketPhotos = (): Photo[] => {
   // Note: In a client-side component, we can't directly read the filesystem
   // So we'll create an API endpoint to list bucket photos, or use a predefined list
   // For now, using a reasonable default that you can customize
-  
+
   // You can update this list to match your actual bucket photos
   const bucketPhotos: string[] = [
     // Add your actual photo filenames here
@@ -21,17 +21,20 @@ const loadBucketPhotos = (): Photo[] => {
       id: `bucket-${index + 1}`,
       url: `/api/bucket-photos?index=${index}`, // Will serve actual bucket photos
       name: `Photo ${index + 1}`,
-      uploadedAt: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)),
-      selectedBy: []
+      uploadedAt: new Date(Date.now() - index * 24 * 60 * 60 * 1000),
+      selectedBy: [],
     }));
   }
 
   return bucketPhotos.map((filename, index) => ({
     id: `bucket-${index + 1}`,
     url: `/bucket/${filename}`,
-    name: filename.replace(/\.[^/.]+$/, "").replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-    uploadedAt: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)),
-    selectedBy: []
+    name: filename
+      .replace(/\.[^/.]+$/, '')
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, (l: string) => l.toUpperCase()),
+    uploadedAt: new Date(Date.now() - index * 24 * 60 * 60 * 1000),
+    selectedBy: [],
   }));
 };
 
@@ -43,7 +46,7 @@ const sampleUsers: User[] = [
   { id: '2', name: 'Bob', color: '#ef4444' },
   { id: '3', name: 'Charlie', color: '#10b981' },
   { id: '4', name: 'Diana', color: '#f59e0b' },
-  { id: '5', name: 'Eve', color: '#8b5cf6' }
+  { id: '5', name: 'Eve', color: '#8b5cf6' },
 ];
 
 class PhotoStore {
@@ -52,7 +55,7 @@ class PhotoStore {
     users: [...sampleUsers],
     currentUser: null,
     selectedPhotos: [],
-    filterUsers: []
+    filterUsers: [],
   };
 
   private listeners: Set<() => void> = new Set();
@@ -67,7 +70,7 @@ class PhotoStore {
   }
 
   private notify() {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 
   setCurrentUser(user: User) {
@@ -78,14 +81,14 @@ class PhotoStore {
   togglePhotoSelection(photoId: string) {
     if (!this.state.currentUser) return;
 
-    const photo = this.state.photos.find(p => p.id === photoId);
+    const photo = this.state.photos.find((p) => p.id === photoId);
     if (!photo) return;
 
     const userId = this.state.currentUser.id;
     const isSelected = photo.selectedBy.includes(userId);
 
     if (isSelected) {
-      photo.selectedBy = photo.selectedBy.filter(id => id !== userId);
+      photo.selectedBy = photo.selectedBy.filter((id) => id !== userId);
     } else {
       photo.selectedBy.push(userId);
     }
@@ -103,10 +106,8 @@ class PhotoStore {
       return this.state.photos;
     }
 
-    return this.state.photos.filter(photo =>
-      this.state.filterUsers.some(userId =>
-        photo.selectedBy.includes(userId)
-      )
+    return this.state.photos.filter((photo) =>
+      this.state.filterUsers.some((userId) => photo.selectedBy.includes(userId))
     );
   }
 
@@ -119,9 +120,9 @@ class PhotoStore {
           url: e.target?.result as string,
           name: file.name,
           uploadedAt: new Date(),
-          selectedBy: []
+          selectedBy: [],
         };
-        
+
         this.state.photos.unshift(photo);
         this.notify();
         resolve(photo);
@@ -131,7 +132,7 @@ class PhotoStore {
   }
 
   getUserById(userId: string): User | undefined {
-    return this.state.users.find(user => user.id === userId);
+    return this.state.users.find((user) => user.id === userId);
   }
 }
 

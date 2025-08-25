@@ -38,7 +38,9 @@ export default function PhotoGalleryToolbar({
         /* Management Mode Toggle */
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Photo Management</h3>
+            <h3 className="text-sm font-medium text-gray-900">
+              Photo Management
+            </h3>
             <p className="text-xs text-gray-600 mt-1">
               Organize, delete, or download multiple photos at once
             </p>
@@ -94,10 +96,8 @@ export default function PhotoGalleryToolbar({
           {/* Bulk Actions */}
           {selectedCount > 0 && (
             <div className="flex items-center gap-2 pt-2 border-t">
-              <span className="text-sm text-gray-600 mr-2">
-                Bulk actions:
-              </span>
-              
+              <span className="text-sm text-gray-600 mr-2">Bulk actions:</span>
+
               {/* Bulk Download */}
               <button
                 onClick={onBulkDownload}
@@ -123,8 +123,9 @@ export default function PhotoGalleryToolbar({
 
           {/* Help Text */}
           <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
-            <strong>Tip:</strong> Click the checkbox on photos to select them for bulk operations.
-            You can download or delete multiple photos at once.
+            <strong>Tip:</strong> Click the checkbox on photos to select them
+            for bulk operations. You can download or delete multiple photos at
+            once.
           </div>
         </div>
       )}

@@ -9,16 +9,14 @@ import {
   UserCheck,
   CreditCard,
   ExternalLink,
-} from "lucide-react";
-import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth-utils";
-import {
-  canAccessWorkspace,
-} from "@/lib/auth-utils";
-import { prisma } from "@/lib/db";
-import { UserRole, WorkspaceStatus } from "@prisma/client";
-import { Navigation } from "@/components/Navigation";
-import { getUserSubscription, getUserPlanLimits } from "@/lib/subscription";
+} from 'lucide-react';
+import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth-utils';
+import { canAccessWorkspace } from '@/lib/auth-utils';
+import { prisma } from '@/lib/db';
+import { UserRole, WorkspaceStatus } from '@prisma/client';
+import { Navigation } from '@/components/Navigation';
+import { getUserSubscription, getUserPlanLimits } from '@/lib/subscription';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -89,7 +87,7 @@ export default async function DashboardPage() {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       Promise.all([
         prisma.workspace.count(),
@@ -120,8 +118,8 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div style={{ paddingTop: "64px" }}>
-        {" "}
+      <div style={{ paddingTop: '64px' }}>
+        {' '}
         {/* Add padding for fixed navbar (16 * 4 = 64px) */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Welcome Header */}
@@ -131,10 +129,10 @@ export default async function DashboardPage() {
             </h1>
             <p className="text-gray-600">
               {user.role === UserRole.SUPER_ADMIN
-                ? "Manage your photo selection SaaS platform and monitor all workspaces."
+                ? 'Manage your photo selection SaaS platform and monitor all workspaces.'
                 : `Here's what you can do with your ${user.role
                     .toLowerCase()
-                    .replace("_", " ")} account.`}
+                    .replace('_', ' ')} account.`}
             </p>
           </div>
 
@@ -207,8 +205,8 @@ export default async function DashboardPage() {
                   </h2>
                   <p className="text-gray-600 text-sm mt-1">
                     {user.role === UserRole.SUPER_ADMIN
-                      ? "Manage all client workspaces and their users"
-                      : "Access and manage your workspaces"}
+                      ? 'Manage all client workspaces and their users'
+                      : 'Access and manage your workspaces'}
                   </p>
                 </div>
               </div>
@@ -224,9 +222,15 @@ export default async function DashboardPage() {
                           <Building2 className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-1">Current Workspace</h3>
-                          <p className="text-xl font-bold text-gray-900">{workspace.name}</p>
-                          <p className="text-sm text-gray-600">/{workspace.slug}</p>
+                          <h3 className="text-sm font-medium text-gray-500 mb-1">
+                            Current Workspace
+                          </h3>
+                          <p className="text-xl font-bold text-gray-900">
+                            {workspace.name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            /{workspace.slug}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -247,18 +251,30 @@ export default async function DashboardPage() {
                         <FolderOpen className="h-6 w-6 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Workspace Overview</h3>
-                        <p className="text-xl font-bold text-gray-900">Workspace Statistics</p>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">
+                          Workspace Overview
+                        </h3>
+                        <p className="text-xl font-bold text-gray-900">
+                          Workspace Statistics
+                        </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-8">
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-gray-900">{adminData.stats.totalWorkspaces}</p>
-                        <p className="text-sm text-gray-600 mt-1">Total Workspaces</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          {adminData.stats.totalWorkspaces}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Total Workspaces
+                        </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-green-600">{adminData.stats.activeWorkspaces}</p>
-                        <p className="text-sm text-gray-600 mt-1">Active Workspaces</p>
+                        <p className="text-3xl font-bold text-green-600">
+                          {adminData.stats.activeWorkspaces}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Active Workspaces
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -272,9 +288,15 @@ export default async function DashboardPage() {
                         <Camera className="h-6 w-6 text-purple-600" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Quick Access</h3>
-                        <p className="text-xl font-bold text-gray-900">Ready to use</p>
-                        <p className="text-sm text-gray-600">Manage photos and selections in your workspace</p>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">
+                          Quick Access
+                        </h3>
+                        <p className="text-xl font-bold text-gray-900">
+                          Ready to use
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Manage photos and selections in your workspace
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -290,7 +312,7 @@ export default async function DashboardPage() {
                   <FolderOpen className="h-5 w-5" />
                   <span>Manage All Workspaces</span>
                 </Link>
-                
+
                 {/* Quick access to current workspace */}
                 {workspace && hasWorkspaceAccess && (
                   <Link
@@ -324,32 +346,32 @@ export default async function DashboardPage() {
                     <div className="flex items-center space-x-3 mb-3">
                       <div
                         className={`p-2 rounded-lg ${
-                          subscription.planType === "ENTERPRISE"
-                            ? "bg-purple-100"
-                            : subscription.planType === "PROFESSIONAL"
-                            ? "bg-blue-100"
-                            : "bg-green-100"
+                          subscription.planType === 'ENTERPRISE'
+                            ? 'bg-purple-100'
+                            : subscription.planType === 'PROFESSIONAL'
+                              ? 'bg-blue-100'
+                              : 'bg-green-100'
                         }`}
                       >
                         <CreditCard
                           className={`h-5 w-5 ${
-                            subscription.planType === "ENTERPRISE"
-                              ? "text-purple-600"
-                              : subscription.planType === "PROFESSIONAL"
-                              ? "text-blue-600"
-                              : "text-green-600"
+                            subscription.planType === 'ENTERPRISE'
+                              ? 'text-purple-600'
+                              : subscription.planType === 'PROFESSIONAL'
+                                ? 'text-blue-600'
+                                : 'text-green-600'
                           }`}
                         />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
                           {subscription.planType.charAt(0) +
-                            subscription.planType.slice(1).toLowerCase()}{" "}
+                            subscription.planType.slice(1).toLowerCase()}{' '}
                           Plan
                         </h3>
                         <p className="text-sm text-gray-600">
-                          {subscription.status === "ACTIVE"
-                            ? "Active"
+                          {subscription.status === 'ACTIVE'
+                            ? 'Active'
                             : subscription.status.toLowerCase()}
                         </p>
                       </div>
@@ -360,7 +382,7 @@ export default async function DashboardPage() {
                         <span>Workspaces:</span>
                         <span className="font-medium">
                           {limits.maxWorkspaces === -1
-                            ? "Unlimited"
+                            ? 'Unlimited'
                             : limits.maxWorkspaces}
                         </span>
                       </div>
@@ -368,7 +390,7 @@ export default async function DashboardPage() {
                         <span>Photos per workspace:</span>
                         <span className="font-medium">
                           {limits.maxPhotosPerWorkspace === -1
-                            ? "Unlimited"
+                            ? 'Unlimited'
                             : limits.maxPhotosPerWorkspace}
                         </span>
                       </div>
@@ -376,7 +398,7 @@ export default async function DashboardPage() {
                         <span>Users per workspace:</span>
                         <span className="font-medium">
                           {limits.maxUsersPerWorkspace === -1
-                            ? "Unlimited"
+                            ? 'Unlimited'
                             : limits.maxUsersPerWorkspace}
                         </span>
                       </div>
@@ -384,7 +406,7 @@ export default async function DashboardPage() {
                         <span>Storage:</span>
                         <span className="font-medium">
                           {limits.maxStorageGB === -1
-                            ? "Unlimited"
+                            ? 'Unlimited'
                             : `${limits.maxStorageGB}GB`}
                         </span>
                       </div>
@@ -406,7 +428,7 @@ export default async function DashboardPage() {
                           <span>View Billing Details</span>
                         </Link>
 
-                        {subscription.planType === "STARTER" && (
+                        {subscription.planType === 'STARTER' && (
                           <Link
                             href="/pricing"
                             className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
@@ -454,7 +476,7 @@ export default async function DashboardPage() {
                       No Subscription Found
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      You don't have an active subscription yet. Start with our
+                      You don&apos;t have an active subscription yet. Start with our
                       free Starter plan or upgrade to unlock more features.
                     </p>
                     <div className="space-y-3">
@@ -475,7 +497,6 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {/* Quick Actions remain for other functionality */}
             </div>
-
           </div>
 
           {/* Account Information */}
@@ -494,16 +515,16 @@ export default async function DashboardPage() {
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Role</h3>
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    user.role === "SUPER_ADMIN"
-                      ? "bg-red-100 text-red-800"
-                      : user.role === "BUSINESS_OWNER"
-                      ? "bg-blue-100 text-blue-800"
-                      : user.role === "STAFF"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
+                    user.role === 'SUPER_ADMIN'
+                      ? 'bg-red-100 text-red-800'
+                      : user.role === 'BUSINESS_OWNER'
+                        ? 'bg-blue-100 text-blue-800'
+                        : user.role === 'STAFF'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
                   }`}
                 >
-                  {user.role.toLowerCase().replace("_", " ")}
+                  {user.role.toLowerCase().replace('_', ' ')}
                 </span>
               </div>
               {workspace && (
@@ -522,7 +543,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         </main>
-      </div>{" "}
+      </div>{' '}
       {/* Close padding wrapper */}
     </div>
   );

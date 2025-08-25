@@ -2,7 +2,10 @@
 
 import { apiService, ApiPhoto, ApiUser } from './api';
 import type { Socket } from 'socket.io-client';
-import type { ServerToClientEvents, ClientToServerEvents } from './socket-server';
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from './socket-server';
 
 export interface ProductionAppState {
   photos: ApiPhoto[];
@@ -49,7 +52,7 @@ class ProductionPhotoStore {
   }
 
   private notify() {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 
   private setLoading(loading: boolean) {
@@ -64,7 +67,7 @@ class ProductionPhotoStore {
 
   setSocket(socket: Socket<ServerToClientEvents, ClientToServerEvents> | null) {
     this.state.socket = socket;
-    
+
     if (socket) {
       // Set up socket event listeners
       socket.on('photoSelected', (data) => {
@@ -84,7 +87,7 @@ class ProductionPhotoStore {
         console.log(`User disconnected: ${data.userId}`);
       });
     }
-    
+
     this.notify();
   }
 
@@ -94,16 +97,20 @@ class ProductionPhotoStore {
     userName: string;
     selected: boolean;
   }) {
-    const photoIndex = this.state.photos.findIndex(p => p.id === parseInt(data.photoId));
+    const photoIndex = this.state.photos.findIndex(
+      (p) => p.id === parseInt(data.photoId)
+    );
     if (photoIndex === -1) return;
 
     const photo = { ...this.state.photos[photoIndex] };
-    
+
     if (data.selected) {
       // Add selection if not already present
-      const existingSelection = photo.selections.find(s => s.userId === data.userId);
+      const existingSelection = photo.selections.find(
+        (s) => s.userId === data.userId
+      );
       if (!existingSelection) {
-        const user = this.state.users.find(u => u.id === data.userId);
+        const user = this.state.users.find((u) => u.id === data.userId);
         if (user) {
           photo.selections.push({
             id: `temp-${Date.now()}`,
@@ -119,7 +126,9 @@ class ProductionPhotoStore {
       }
     } else {
       // Remove selection
-      photo.selections = photo.selections.filter(s => s.userId !== data.userId);
+      photo.selections = photo.selections.filter(
+        (s) => s.userId !== data.userId
+      );
     }
 
     this.state.photos[photoIndex] = photo;
@@ -139,27 +148,35 @@ class ProductionPhotoStore {
       this.state.users = users;
       this.notify();
     } catch (error) {
-      this.setError(error instanceof Error ? error.message : 'Failed to load users');
+      this.setError(
+        error instanceof Error ? error.message : 'Failed to load users'
+      );
     } finally {
       this.setLoading(false);
     }
   }
 
-  async createUser(name: string, email: string, color?: string): Promise<ApiUser> {
+  async createUser(
+    name: string,
+    email: string,
+    color?: string
+  ): Promise<ApiUser> {
     try {
       this.setError(null);
       const user = await apiService.createUser(name, email, color);
-      
+
       // Add to users list if not already present
-      const existingIndex = this.state.users.findIndex(u => u.id === user.id);
+      const existingIndex = this.state.users.findIndex((u) => u.id === user.id);
       if (existingIndex === -1) {
         this.state.users.push(user);
         this.notify();
       }
-      
+
       return user;
     } catch (error) {
-      this.setError(error instanceof Error ? error.message : 'Failed to create user');
+      this.setError(
+        error instanceof Error ? error.message : 'Failed to create user'
+      );
       throw error;
     }
   }
@@ -177,7 +194,9 @@ class ProductionPhotoStore {
       this.state.photos = photos;
       this.notify();
     } catch (error) {
-      this.setError(error instanceof Error ? error.message : 'Failed to load photos');
+      this.setError(
+        error instanceof Error ? error.message : 'Failed to load photos'
+      );
     } finally {
       this.setLoading(false);
     }
@@ -190,22 +209,27 @@ class ProductionPhotoStore {
 
     try {
       this.setError(null);
-      const photo = await apiService.uploadPhoto(file, this.state.currentUser.id);
-      
+      const photo = await apiService.uploadPhoto(
+        file,
+        this.state.currentUser.id
+      );
+
       // Add to photos list
       this.state.photos.unshift(photo);
-      
+
       // Emit to socket for real-time updates
       if (this.state.socket && this.state.currentUser) {
-        this.state.socket.emit('uploadPhoto', { 
+        this.state.socket.emit('uploadPhoto', {
           workspaceId: 'default', // TODO: Add proper workspace context
-          message: `New photo uploaded by ${this.state.currentUser.name}`
+          message: `New photo uploaded by ${this.state.currentUser.name}`,
         });
       }
-      
+
       this.notify();
     } catch (error) {
-      this.setError(error instanceof Error ? error.message : 'Failed to upload photo');
+      this.setError(
+        error instanceof Error ? error.message : 'Failed to upload photo'
+      );
       throw error;
     }
   }
@@ -215,14 +239,19 @@ class ProductionPhotoStore {
 
     try {
       this.setError(null);
-      const result = await apiService.togglePhotoSelection(photoId, this.state.currentUser.id);
-      
+      const result = await apiService.togglePhotoSelection(
+        photoId,
+        this.state.currentUser.id
+      );
+
       // Update local state
-      const photoIndex = this.state.photos.findIndex(p => p.id === parseInt(photoId));
+      const photoIndex = this.state.photos.findIndex(
+        (p) => p.id === parseInt(photoId)
+      );
       if (photoIndex !== -1) {
         this.state.photos[photoIndex] = result.photo;
       }
-      
+
       // Emit to socket for real-time updates
       if (this.state.socket) {
         this.state.socket.emit('selectPhoto', {
@@ -230,10 +259,14 @@ class ProductionPhotoStore {
           userId: this.state.currentUser.id,
         });
       }
-      
+
       this.notify();
     } catch (error) {
-      this.setError(error instanceof Error ? error.message : 'Failed to toggle photo selection');
+      this.setError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to toggle photo selection'
+      );
     }
   }
 
@@ -248,15 +281,15 @@ class ProductionPhotoStore {
       return this.state.photos;
     }
 
-    return this.state.photos.filter(photo =>
-      this.state.filterUsers.every(userId =>
-        photo.selections.some(selection => selection.userId === userId)
+    return this.state.photos.filter((photo) =>
+      this.state.filterUsers.every((userId) =>
+        photo.selections.some((selection) => selection.userId === userId)
       )
     );
   }
 
   getUserById(userId: string): ApiUser | undefined {
-    return this.state.users.find(user => user.id === userId);
+    return this.state.users.find((user) => user.id === userId);
   }
 
   // Pagination methods
@@ -266,30 +299,32 @@ class ProductionPhotoStore {
     }
 
     this.state.isLoadingMore = true;
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
 
     try {
       const nextPage = this.state.currentPage + 1;
-      const response = await fetch(`/api/photos?page=${nextPage}&limit=${this.state.pageSize}&filterUsers=${this.state.filterUsers.join(',')}`);
-      
+      const response = await fetch(
+        `/api/photos?page=${nextPage}&limit=${this.state.pageSize}&filterUsers=${this.state.filterUsers.join(',')}`
+      );
+
       if (!response.ok) {
         throw new Error('Failed to load more photos');
       }
 
       const data = await response.json();
-      
+
       // Append new photos to existing ones
       this.state.photos = [...this.state.photos, ...data.photos];
       this.state.currentPage = nextPage;
       this.state.totalPhotos = data.total;
       this.state.hasMorePhotos = this.state.photos.length < data.total;
-      
     } catch (error) {
       console.error('Failed to load more photos:', error);
-      this.state.error = error instanceof Error ? error.message : 'Failed to load more photos';
+      this.state.error =
+        error instanceof Error ? error.message : 'Failed to load more photos';
     } finally {
       this.state.isLoadingMore = false;
-      this.listeners.forEach(listener => listener());
+      this.listeners.forEach((listener) => listener());
     }
   }
 
@@ -298,7 +333,7 @@ class ProductionPhotoStore {
     this.state.hasMorePhotos = true;
     this.state.isLoadingMore = false;
     this.state.photos = [];
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 
   getPaginatedPhotos(): ApiPhoto[] {

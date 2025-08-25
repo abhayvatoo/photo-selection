@@ -7,7 +7,7 @@ const sampleUsers = [
   { name: 'Bob Smith', email: 'bob@example.com', color: '#ef4444' },
   { name: 'Charlie Brown', email: 'charlie@example.com', color: '#10b981' },
   { name: 'Diana Prince', email: 'diana@example.com', color: '#f59e0b' },
-  { name: 'Eve Wilson', email: 'eve@example.com', color: '#8b5cf6' }
+  { name: 'Eve Wilson', email: 'eve@example.com', color: '#8b5cf6' },
 ];
 
 async function main() {

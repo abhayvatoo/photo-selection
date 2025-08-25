@@ -21,12 +21,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = (message: string, type: ToastType) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { id, message, type };
-    
-    setToasts(prevToasts => [...prevToasts, newToast]);
+
+    setToasts((prevToasts) => [...prevToasts, newToast]);
   };
 
   const removeToast = (id: string) => {
-    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
   };
 
   return (

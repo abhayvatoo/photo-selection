@@ -9,25 +9,40 @@ import { VALIDATION, ERROR_MESSAGES, FILE_UPLOAD } from './constants';
 
 // Common validation schemas
 export const commonSchemas = {
-  email: z.string().email('Invalid email format').max(VALIDATION.EMAIL_MAX_LENGTH),
-  name: z.string().min(VALIDATION.NAME_MIN_LENGTH).max(VALIDATION.NAME_MAX_LENGTH),
+  email: z
+    .string()
+    .email('Invalid email format')
+    .max(VALIDATION.EMAIL_MAX_LENGTH),
+  name: z
+    .string()
+    .min(VALIDATION.NAME_MIN_LENGTH)
+    .max(VALIDATION.NAME_MAX_LENGTH),
   uuid: z.string().uuid('Invalid UUID format'),
   positiveInteger: z.number().int().positive(),
   nonEmptyString: z.string().min(1, 'Field cannot be empty'),
-  
+
   // Pagination schema
   pagination: z.object({
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(20),
   }),
-  
+
   // File validation schema
   fileUpload: z.object({
-    workspaceId: z.string().uuid('Invalid workspace ID'),
+    workspaceId: z.string().regex(
+      /^c[a-z0-9]{24}$/,
+      'Invalid workspace ID format - must be a valid CUID'
+    ),
   }),
-  
+
   // User role schema
-  userRole: z.enum(['SUPER_ADMIN', 'BUSINESS_OWNER', 'ADMIN', 'PHOTOGRAPHER', 'CLIENT']),
+  userRole: z.enum([
+    'SUPER_ADMIN',
+    'BUSINESS_OWNER',
+    'ADMIN',
+    'PHOTOGRAPHER',
+    'CLIENT',
+  ]),
 };
 
 // File validation utilities
@@ -50,11 +65,13 @@ export const fileValidation = {
    * Validates filename for security (no path traversal)
    */
   isValidFilename: (filename: string): boolean => {
-    return !filename.includes('..') && 
-           !filename.includes('/') && 
-           !filename.includes('\\') &&
-           filename.length > 0 &&
-           filename.length <= 255;
+    return (
+      !filename.includes('..') &&
+      !filename.includes('/') &&
+      !filename.includes('\\') &&
+      filename.length > 0 &&
+      filename.length <= 255
+    );
   },
 
   /**
@@ -104,7 +121,10 @@ export const validationResponses = {
   /**
    * Returns standardized validation error response
    */
-  validationError: (message: string = ERROR_MESSAGES.INVALID_INPUT, details?: any) => {
+  validationError: (
+    message: string = ERROR_MESSAGES.INVALID_INPUT,
+    details?: any
+  ) => {
     return NextResponse.json(
       { error: message, ...(details && { details }) },
       { status: 400 }
@@ -168,12 +188,14 @@ export function validateWithSchema<T>(
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        errors: error.issues.map((err: any) => `${err.path.join('.')}: ${err.message}`)
+        errors: error.issues.map(
+          (err: any) => `${err.path.join('.')}: ${err.message}`
+        ),
       };
     }
     return {
       success: false,
-      errors: ['Validation failed']
+      errors: ['Validation failed'],
     };
   }
 }
@@ -184,14 +206,17 @@ export function validateWithSchema<T>(
 export function validatePagination(searchParams: URLSearchParams) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
-  
+
   return validateWithSchema(commonSchemas.pagination, { page, limit });
 }
 
 /**
  * Validates UUID parameter
  */
-export function validateUUID(value: string, fieldName: string = 'ID'): ValidationResult<string> {
+export function validateUUID(
+  value: string,
+  fieldName: string = 'ID'
+): ValidationResult<string> {
   return validateWithSchema(
     z.string().uuid(`Invalid ${fieldName} format`),
     value

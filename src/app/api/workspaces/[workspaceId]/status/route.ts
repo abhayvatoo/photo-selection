@@ -27,14 +27,11 @@ export async function PATCH(
     // 2. Get user from database
     const dbUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, role: true }
+      select: { id: true, role: true },
     });
 
     if (!dbUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 3. Check permissions - only SUPER_ADMIN and BUSINESS_OWNER can change status
@@ -56,7 +53,7 @@ export async function PATCH(
     // 5. Check if workspace exists
     const workspace = await prisma.workspace.findUnique({
       where: { id: params.workspaceId },
-      select: { id: true, name: true, status: true }
+      select: { id: true, name: true, status: true },
     });
 
     if (!workspace) {
@@ -69,12 +66,12 @@ export async function PATCH(
     // 6. Parse and validate request body
     const body = await request.json();
     const validationResult = statusSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid input data',
-          details: validationResult.error.issues.map(e => e.message)
+          details: validationResult.error.issues.map((e) => e.message),
         },
         { status: 400 }
       );
@@ -90,15 +87,14 @@ export async function PATCH(
         id: true,
         name: true,
         status: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     return NextResponse.json({
       success: true,
-      workspace: updatedWorkspace
+      workspace: updatedWorkspace,
     });
-
   } catch (error) {
     console.error('Error updating workspace status:', error);
     return NextResponse.json(

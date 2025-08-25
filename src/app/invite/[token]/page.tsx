@@ -54,9 +54,9 @@ export default function InvitePage() {
   const handleAccept = async () => {
     if (!session?.user) {
       // Redirect to sign in with the invitation email
-      signIn('email', { 
+      signIn('email', {
         email: invitation?.email,
-        callbackUrl: `/invite/${token}`
+        callbackUrl: `/invite/${token}`,
       });
       return;
     }
@@ -119,7 +119,9 @@ export default function InvitePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Invitation</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Invalid Invitation
+          </h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.push('/')}
@@ -150,9 +152,12 @@ export default function InvitePage() {
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-6">
           <div className="text-blue-500 text-6xl mb-4">📧</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">You're Invited!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            You&apos;re Invited!
+          </h1>
           <p className="text-gray-600">
-            {invitation.invitedBy.name || invitation.invitedBy.email} has invited you to join
+            {invitation.invitedBy.name || invitation.invitedBy.email} has
+            invited you to join
             {invitation.workspace && ` ${invitation.workspace.name}`}
           </p>
         </div>
@@ -165,7 +170,9 @@ export default function InvitePage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Role:</span>
-              <span className="font-medium">{getRoleDisplayName(invitation.role)}</span>
+              <span className="font-medium">
+                {getRoleDisplayName(invitation.role)}
+              </span>
             </div>
             {invitation.workspace && (
               <div className="flex justify-between">
@@ -197,7 +204,8 @@ export default function InvitePage() {
         ) : session.user.email !== invitation.email ? (
           <div className="text-center">
             <p className="text-red-600 mb-4">
-              You're signed in as {session.user.email}, but this invitation is for {invitation.email}
+              You&apos;re signed in as {session.user.email}, but this invitation is
+              for {invitation.email}
             </p>
             <button
               onClick={() => signIn('email', { email: invitation.email })}
@@ -209,7 +217,8 @@ export default function InvitePage() {
         ) : (
           <div className="text-center">
             <p className="text-gray-600 mb-4">
-              Ready to accept your invitation as {getRoleDisplayName(invitation.role)}?
+              Ready to accept your invitation as{' '}
+              {getRoleDisplayName(invitation.role)}?
             </p>
             <button
               onClick={handleAccept}

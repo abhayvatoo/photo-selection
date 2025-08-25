@@ -13,8 +13,7 @@ export const dynamic = 'force-dynamic';
 
 // Input validation schema
 const userLimitSchema = z.object({
-  workspaceId: z.string()
-    .uuid('Invalid workspace ID format')
+  workspaceId: z.string().uuid('Invalid workspace ID format'),
 });
 
 export async function GET(request: NextRequest) {
@@ -25,7 +24,10 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       console.log('❌ No authentication found');
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
@@ -37,7 +39,10 @@ export async function GET(request: NextRequest) {
 
     if (!workspaceId) {
       console.log('❌ Missing workspace ID');
-      return NextResponse.json({ error: 'Workspace ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Workspace ID is required' },
+        { status: 400 }
+      );
     }
 
     console.log('✅ Workspace ID provided:', workspaceId);
@@ -45,7 +50,7 @@ export async function GET(request: NextRequest) {
     // 3. Get user from database
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, workspaceId: true }
+      select: { id: true, role: true, workspaceId: true },
     });
 
     if (!dbUser) {
@@ -56,13 +61,15 @@ export async function GET(request: NextRequest) {
     console.log('✅ User found:', dbUser.role);
 
     // 4. Authorization check - SUPER_ADMIN can access any workspace
-    const hasAccess = 
-      dbUser.role === 'SUPER_ADMIN' || 
-      dbUser.workspaceId === workspaceId;
+    const hasAccess =
+      dbUser.role === 'SUPER_ADMIN' || dbUser.workspaceId === workspaceId;
 
     if (!hasAccess) {
       console.log('❌ Access denied to workspace');
-      return NextResponse.json({ error: 'Access denied to this workspace' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Access denied to this workspace' },
+        { status: 403 }
+      );
     }
 
     console.log('✅ Access granted');
@@ -73,24 +80,32 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      ...limitCheck
+      ...limitCheck,
     });
-
   } catch (error) {
     console.error('❌ API Route Error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('workspace not found')) {
-        return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Workspace not found' },
+          { status: 404 }
+        );
       }
       if (error.message.includes('subscription')) {
-        return NextResponse.json({ error: 'Subscription information unavailable' }, { status: 503 });
+        return NextResponse.json(
+          { error: 'Subscription information unavailable' },
+          { status: 503 }
+        );
       }
     }
-    
-    return NextResponse.json({ 
-      error: 'Failed to check user limit', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: 'Failed to check user limit',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

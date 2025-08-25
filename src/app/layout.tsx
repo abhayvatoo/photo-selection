@@ -1,30 +1,29 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { SessionProvider } from '@/components/providers/SessionProvider'
-import { ToastProvider } from '@/hooks/useToast'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { SessionProvider } from '@/components/providers/SessionProvider';
+import { ToastProvider } from '@/hooks/useToast';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Photo Selection SaaS',
-  description: 'Multi-tenant photo selection platform for photographers and clients',
-}
+  description:
+    'Multi-tenant photo selection platform for photographers and clients',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <body className={inter.className}>
         <SessionProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <ToastProvider>{children}</ToastProvider>
         </SessionProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -4,17 +4,24 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Plus, X, AlertTriangle } from 'lucide-react';
 import { checkWorkspaceLimit } from '@/lib/subscription';
+import { useToast } from '@/hooks/useToast';
+import { csrfPostJSON } from '@/lib/csrf-fetch';
 
 export function CreateWorkspaceButton() {
   const { data: session } = useSession();
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [limitCheck, setLimitCheck] = useState<{ allowed: boolean; current: number; limit: number } | null>(null);
+  const [limitCheck, setLimitCheck] = useState<{
+    allowed: boolean;
+    current: number;
+    limit: number;
+  } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
   });
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (session?.user?.id && showModal) {
@@ -24,7 +31,7 @@ export function CreateWorkspaceButton() {
 
   const checkLimit = async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       const response = await fetch('/api/user/workspace-limit');
       if (response.ok) {
@@ -40,28 +47,18 @@ export function CreateWorkspaceButton() {
     e.preventDefault();
     setIsLoading(true);
 
-
     try {
-      // Get CSRF token
-      const csrfResponse = await fetch('/api/auth/csrf');
-      const { csrfToken } = await csrfResponse.json();
-
-      const response = await fetch('/api/admin/workspaces', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
-        },
-        body: JSON.stringify(formData),
-      });
-
+      const response = await csrfPostJSON('/api/admin/workspaces', formData);
 
       if (response.ok) {
         const result = await response.json();
-        
+
         // Show success notification
-        alert(`✅ Workspace "${result.workspace.name}" created successfully!\n\nYou can now access it at: /workspace/${result.workspace.slug}`);
-        
+        showToast(
+          `Workspace "${result.workspace.name}" created successfully! You can access it at: /workspace/${result.workspace.slug}`,
+          'success'
+        );
+
         setShowModal(false);
         setFormData({ name: '', slug: '', description: '' });
         // Refresh the page to show new workspace
@@ -69,11 +66,17 @@ export function CreateWorkspaceButton() {
       } else {
         const error = await response.json();
         console.error('❌ CreateWorkspaceButton: API error:', error);
-        alert(`Failed to create workspace: ${error.error || error.message || 'Unknown error'}\n\nDetails: ${error.details || 'No additional details'}`);
+        showToast(
+          `Failed to create workspace: ${error.error || error.message || 'Unknown error'}`,
+          'error'
+        );
       }
     } catch (error) {
       console.error('❌ CreateWorkspaceButton: Network/parsing error:', error);
-      alert(`Failed to create workspace: ${error instanceof Error ? error.message : 'Network error'}`);
+      showToast(
+        `Failed to create workspace: ${error instanceof Error ? error.message : 'Network error'}`,
+        'error'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -129,10 +132,15 @@ export function CreateWorkspaceButton() {
                       Workspace Limit Reached
                     </p>
                     <p className="text-sm text-orange-700 mt-1">
-                      You've reached your limit of {limitCheck.limit} workspace{limitCheck.limit === 1 ? '' : 's'}. 
-                      <a href="/pricing" className="underline hover:no-underline ml-1">
+                      You've reached your limit of {limitCheck.limit} workspace
+                      {limitCheck.limit === 1 ? '' : 's'}.
+                      <a
+                        href="/pricing"
+                        className="underline hover:no-underline ml-1"
+                      >
                         Upgrade your plan
-                      </a> to create more workspaces.
+                      </a>{' '}
+                      to create more workspaces.
                     </p>
                   </div>
                 </div>
@@ -172,7 +180,9 @@ export function CreateWorkspaceButton() {
                 <input
                   type="text"
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   placeholder="john-jane-wedding"
                   pattern="[a-z0-9-]+"
@@ -190,7 +200,9 @@ export function CreateWorkspaceButton() {
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   rows={3}
                   placeholder="Brief description of this workspace..."
@@ -207,12 +219,16 @@ export function CreateWorkspaceButton() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading || (limitCheck ? !limitCheck.allowed : false)}
+                  disabled={
+                    isLoading || (limitCheck ? !limitCheck.allowed : false)
+                  }
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? 'Creating...' : 
-                   (limitCheck && !limitCheck.allowed) ? 'Limit Reached' : 
-                   'Create Workspace'}
+                  {isLoading
+                    ? 'Creating...'
+                    : limitCheck && !limitCheck.allowed
+                      ? 'Limit Reached'
+                      : 'Create Workspace'}
                 </button>
               </div>
             </form>

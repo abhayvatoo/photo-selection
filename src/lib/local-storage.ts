@@ -24,17 +24,17 @@ export async function uploadPhotoLocally(
   mimeType: string
 ): Promise<LocalUploadResult> {
   await ensureUploadDir();
-  
+
   const fileExtension = path.extname(originalName);
   const filename = `${uuidv4()}${fileExtension}`;
   const filePath = path.join(UPLOAD_DIR, filename);
-  
+
   // Write file to local storage
   await writeFile(filePath, file);
-  
-  // Create public URL (served by Next.js static files)
-  const publicUrl = `/uploads/${filename}`;
-  
+
+  // Create public URL (served by Next.js API route)
+  const publicUrl = `/api/uploads/${filename}`;
+
   return {
     filename,
     publicUrl,
@@ -53,5 +53,5 @@ export async function deletePhotoLocally(filename: string): Promise<void> {
 }
 
 export function getLocalPhotoUrl(filename: string): string {
-  return `/uploads/${filename}`;
+  return `/api/uploads/${filename}`;
 }

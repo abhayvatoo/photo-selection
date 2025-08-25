@@ -13,7 +13,12 @@ interface ImageModalProps {
   currentUser: ApiUser | null;
 }
 
-export default function ImageModal({ photo, isOpen, onClose, currentUser }: ImageModalProps) {
+export default function ImageModal({
+  photo,
+  isOpen,
+  onClose,
+  currentUser,
+}: ImageModalProps) {
   const [, forceUpdate] = useState({});
 
   // Subscribe to store updates to reflect selection changes
@@ -32,14 +37,14 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
   };
 
   const isPhotoSelectedByUser = (photo: ApiPhoto, userId: string): boolean => {
-    return photo.selections.some(selection => selection.userId === userId);
+    return photo.selections.some((selection) => selection.userId === userId);
   };
 
   // Get current photo data from store to ensure we have latest selection state
   const getCurrentPhoto = (): ApiPhoto | null => {
     if (!photo) return null;
     const state = productionPhotoStore.getState();
-    return state.photos.find(p => p.id === photo.id) || photo;
+    return state.photos.find((p) => p.id === photo.id) || photo;
   };
 
   const currentPhoto = getCurrentPhoto();
@@ -65,7 +70,7 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
   if (!isOpen || !currentPhoto) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
       role="dialog"
       aria-modal="true"
@@ -89,16 +94,38 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
               ? 'bg-green-500 text-white border-green-600 hover:bg-green-600'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
           }`}
-          title={isPhotoSelectedByUser(currentPhoto, currentUser.id) ? 'Unselect photo' : 'Select photo'}
-          aria-label={isPhotoSelectedByUser(currentPhoto, currentUser.id) ? 'Unselect photo' : 'Select photo'}
+          title={
+            isPhotoSelectedByUser(currentPhoto, currentUser.id)
+              ? 'Unselect photo'
+              : 'Select photo'
+          }
+          aria-label={
+            isPhotoSelectedByUser(currentPhoto, currentUser.id)
+              ? 'Unselect photo'
+              : 'Select photo'
+          }
         >
           {isPhotoSelectedByUser(currentPhoto, currentUser.id) ? (
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
           )}
         </button>
@@ -119,7 +146,9 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
       {/* Photo info overlay */}
       <div className="absolute bottom-4 left-4 right-4 text-center">
         <div className="bg-black bg-opacity-50 rounded-lg p-4 backdrop-blur-sm">
-          <h3 className="text-white text-lg font-medium mb-2">{currentPhoto.originalName}</h3>
+          <h3 className="text-white text-lg font-medium mb-2">
+            {currentPhoto.originalName}
+          </h3>
           {currentPhoto.selections.length > 0 && (
             <div className="flex justify-center gap-2">
               <span className="text-gray-300 text-sm">Selected by:</span>
@@ -127,10 +156,10 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
                 {currentPhoto.selections.map((selection) => {
                   const initials = selection.user.name
                     .split(' ')
-                    .map(name => name.charAt(0).toUpperCase())
+                    .map((name) => name.charAt(0).toUpperCase())
                     .slice(0, 2)
                     .join('');
-                  
+
                   return (
                     <span
                       key={selection.id}
@@ -148,8 +177,8 @@ export default function ImageModal({ photo, isOpen, onClose, currentUser }: Imag
       </div>
 
       {/* Click outside to close */}
-      <div 
-        className="absolute inset-0 -z-10" 
+      <div
+        className="absolute inset-0 -z-10"
         onClick={onClose}
         aria-label="Close image"
       />

@@ -33,10 +33,7 @@ export class SecurityHeaders {
           "'unsafe-inline'", // Required for Tailwind CSS
           'https://fonts.googleapis.com',
         ],
-        'font-src': [
-          "'self'",
-          'https://fonts.gstatic.com',
-        ],
+        'font-src': ["'self'", 'https://fonts.gstatic.com'],
         'img-src': [
           "'self'",
           'data:',
@@ -48,10 +45,7 @@ export class SecurityHeaders {
           'https://api.stripe.com',
           'https://checkout.stripe.com',
         ],
-        'frame-src': [
-          'https://js.stripe.com',
-          'https://checkout.stripe.com',
-        ],
+        'frame-src': ['https://js.stripe.com', 'https://checkout.stripe.com'],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
         'form-action': ["'self'"],
@@ -71,17 +65,19 @@ export class SecurityHeaders {
     contentTypeOptions: true,
     referrerPolicy: 'strict-origin-when-cross-origin',
     permissionsPolicy: {
-      'camera': [],
-      'microphone': [],
-      'geolocation': [],
-      'payment': ['self'],
+      camera: [],
+      microphone: [],
+      geolocation: [],
+      payment: ['self'],
     },
   };
 
   /**
    * Generate Content Security Policy header value
    */
-  private static generateCSP(config: SecurityHeadersConfig['contentSecurityPolicy']): string {
+  private static generateCSP(
+    config: SecurityHeadersConfig['contentSecurityPolicy']
+  ): string {
     if (!config?.directives) return '';
 
     const directives = Object.entries(config.directives)
@@ -99,15 +95,17 @@ export class SecurityHeaders {
   /**
    * Generate Strict Transport Security header value
    */
-  private static generateHSTS(config: SecurityHeadersConfig['strictTransportSecurity']): string {
+  private static generateHSTS(
+    config: SecurityHeadersConfig['strictTransportSecurity']
+  ): string {
     if (!config) return '';
 
     let value = `max-age=${config.maxAge}`;
-    
+
     if (config.includeSubDomains) {
       value += '; includeSubDomains';
     }
-    
+
     if (config.preload) {
       value += '; preload';
     }
@@ -118,7 +116,9 @@ export class SecurityHeaders {
   /**
    * Generate Permissions Policy header value
    */
-  private static generatePermissionsPolicy(config: SecurityHeadersConfig['permissionsPolicy']): string {
+  private static generatePermissionsPolicy(
+    config: SecurityHeadersConfig['permissionsPolicy']
+  ): string {
     if (!config) return '';
 
     return Object.entries(config)
@@ -126,9 +126,9 @@ export class SecurityHeaders {
         if (allowlist.length === 0) {
           return `${directive}=()`;
         }
-        const origins = allowlist.map(origin => 
-          origin === 'self' ? '"self"' : origin
-        ).join(' ');
+        const origins = allowlist
+          .map((origin) => (origin === 'self' ? '"self"' : origin))
+          .join(' ');
         return `${directive}=(${origins})`;
       })
       .join(', ');
@@ -138,14 +138,14 @@ export class SecurityHeaders {
    * Apply security headers to response
    */
   static applyHeaders(
-    response: NextResponse, 
+    response: NextResponse,
     config: SecurityHeadersConfig = this.DEFAULT_CONFIG
   ): NextResponse {
     // Content Security Policy
     if (config.contentSecurityPolicy) {
       const csp = this.generateCSP(config.contentSecurityPolicy);
       if (csp) {
-        const headerName = config.contentSecurityPolicy.reportOnly 
+        const headerName = config.contentSecurityPolicy.reportOnly
           ? 'Content-Security-Policy-Report-Only'
           : 'Content-Security-Policy';
         response.headers.set(headerName, csp);
@@ -153,7 +153,10 @@ export class SecurityHeaders {
     }
 
     // Strict Transport Security (HTTPS only)
-    if (config.strictTransportSecurity && process.env.NODE_ENV === 'production') {
+    if (
+      config.strictTransportSecurity &&
+      process.env.NODE_ENV === 'production'
+    ) {
       const hsts = this.generateHSTS(config.strictTransportSecurity);
       if (hsts) {
         response.headers.set('Strict-Transport-Security', hsts);
@@ -177,7 +180,9 @@ export class SecurityHeaders {
 
     // Permissions Policy
     if (config.permissionsPolicy) {
-      const permissionsPolicy = this.generatePermissionsPolicy(config.permissionsPolicy);
+      const permissionsPolicy = this.generatePermissionsPolicy(
+        config.permissionsPolicy
+      );
       if (permissionsPolicy) {
         response.headers.set('Permissions-Policy', permissionsPolicy);
       }
@@ -224,10 +229,7 @@ export class SecurityHeaders {
           "'unsafe-inline'", // Required for Tailwind CSS
           'https://fonts.googleapis.com',
         ],
-        'font-src': [
-          "'self'",
-          'https://fonts.gstatic.com',
-        ],
+        'font-src': ["'self'", 'https://fonts.gstatic.com'],
         'img-src': [
           "'self'",
           'data:',
@@ -239,10 +241,7 @@ export class SecurityHeaders {
           'https://api.stripe.com',
           'https://checkout.stripe.com',
         ],
-        'frame-src': [
-          'https://js.stripe.com',
-          'https://checkout.stripe.com',
-        ],
+        'frame-src': ['https://js.stripe.com', 'https://checkout.stripe.com'],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
         'form-action': ["'self'"],

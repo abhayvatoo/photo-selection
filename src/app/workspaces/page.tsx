@@ -1,21 +1,28 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
-import { Camera, Users, Calendar, ArrowRight, Plus, ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { Navigation } from "@/components/Navigation";
-import { CreateWorkspaceButton } from "@/components/admin/CreateWorkspaceButton";
-import { WorkspaceMenu } from "@/components/WorkspaceMenu";
-import { UserRole } from "@prisma/client";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import {
+  Camera,
+  Users,
+  Calendar,
+  ArrowRight,
+  Plus,
+  ArrowLeft,
+} from 'lucide-react';
+import Link from 'next/link';
+import { Navigation } from '@/components/Navigation';
+import { CreateWorkspaceButton } from '@/components/admin/CreateWorkspaceButton';
+import { WorkspaceMenu } from '@/components/WorkspaceMenu';
+import { UserRole } from '@prisma/client';
 
 export default async function WorkspacesPage() {
   const session = await getServerSession(authOptions);
 
-  console.log("Session:", session);
+  console.log('Session:', session);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect('/auth/signin');
   }
 
   const userRole = (session.user as any)?.role as UserRole;
@@ -47,7 +54,7 @@ export default async function WorkspacesPage() {
           },
         },
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
     });
   } else {
     // Other users can only see workspaces they're assigned to
@@ -86,7 +93,7 @@ export default async function WorkspacesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div style={{ paddingTop: "64px" }}>
+      <div style={{ paddingTop: '64px' }}>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with Back Button */}
           <div className="mb-8">
@@ -106,10 +113,10 @@ export default async function WorkspacesPage() {
                 </h1>
                 <p className="text-gray-600">
                   {userRole === UserRole.SUPER_ADMIN
-                    ? "Manage all workspaces across the platform"
+                    ? 'Manage all workspaces across the platform'
                     : userRole === UserRole.BUSINESS_OWNER
-                    ? "Manage your photography workspaces and client projects"
-                    : "Access your assigned workspace and photo selections"}
+                      ? 'Manage your photography workspaces and client projects'
+                      : 'Access your assigned workspace and photo selections'}
                 </p>
               </div>
               {(userRole === UserRole.SUPER_ADMIN ||
@@ -127,10 +134,10 @@ export default async function WorkspacesPage() {
               </h3>
               <p className="text-gray-600 mb-6">
                 {userRole === UserRole.SUPER_ADMIN
-                  ? "No workspaces have been created yet."
+                  ? 'No workspaces have been created yet.'
                   : userRole === UserRole.BUSINESS_OWNER
-                  ? "You haven't been assigned to any workspaces yet."
-                  : "You haven't been assigned to a workspace yet. Contact your photographer."}
+                    ? "You haven't been assigned to any workspaces yet."
+                    : "You haven't been assigned to a workspace yet. Contact your photographer."}
               </p>
               {(userRole === UserRole.SUPER_ADMIN ||
                 userRole === UserRole.BUSINESS_OWNER) && (
@@ -156,7 +163,7 @@ export default async function WorkspacesPage() {
                         <div className="flex items-center space-x-2 mb-1">
                           {/* Status Dot */}
                           <div className="flex items-center">
-                            {workspace.status === "ACTIVE" ? (
+                            {workspace.status === 'ACTIVE' ? (
                               <div className="relative">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                 <div className="absolute -inset-0.5 w-3 h-3 bg-green-400 rounded-full animate-ping opacity-30"></div>
@@ -182,16 +189,16 @@ export default async function WorkspacesPage() {
                       <div className="flex items-center text-sm text-gray-600">
                         <Users className="h-4 w-4 mr-2" />
                         {workspace._count.users} member
-                        {workspace._count.users !== 1 ? "s" : ""}
+                        {workspace._count.users !== 1 ? 's' : ''}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Camera className="h-4 w-4 mr-2" />
                         {workspace._count.photos} photo
-                        {workspace._count.photos !== 1 ? "s" : ""}
+                        {workspace._count.photos !== 1 ? 's' : ''}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Calendar className="h-4 w-4 mr-2" />
-                        Updated{" "}
+                        Updated{' '}
                         {new Date(workspace.updatedAt).toLocaleDateString()}
                       </div>
                     </div>

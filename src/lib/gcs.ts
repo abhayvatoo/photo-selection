@@ -5,7 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 let storage: Storage | null = null;
 let bucket: any = null;
 
-if (process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
+if (
+  process.env.GOOGLE_CLOUD_PROJECT_ID &&
+  process.env.GOOGLE_CLOUD_STORAGE_BUCKET
+) {
   try {
     storage = new Storage({
       projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
@@ -13,7 +16,10 @@ if (process.env.GOOGLE_CLOUD_PROJECT_ID && process.env.GOOGLE_CLOUD_STORAGE_BUCK
     });
     bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
   } catch (error: any) {
-    console.warn('Google Cloud Storage not configured, using fallback:', error.message);
+    console.warn(
+      'Google Cloud Storage not configured, using fallback:',
+      error.message
+    );
   }
 }
 
@@ -31,7 +37,7 @@ export async function uploadPhoto(
   if (!bucket) {
     throw new Error('Google Cloud Storage not configured');
   }
-  
+
   const filename = `photos/${uuidv4()}-${originalName}`;
   const fileUpload = bucket.file(filename);
 
@@ -52,9 +58,9 @@ export async function uploadPhoto(
       try {
         // Make the file public
         await fileUpload.makePublic();
-        
+
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        
+
         resolve({
           filename,
           publicUrl,

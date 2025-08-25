@@ -7,11 +7,11 @@ import { withCSRFProtection } from '@/lib/csrf';
 import { rateLimiters, applyRateLimit } from '@/lib/rate-limit';
 import { RequestLimits, requestLimits } from '@/lib/request-limits';
 import { FILE_UPLOAD, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
-import { 
-  fileValidation, 
-  validationResponses, 
-  validateWithSchema, 
-  commonSchemas 
+import {
+  fileValidation,
+  validationResponses,
+  validateWithSchema,
+  commonSchemas,
 } from '@/lib/validation-utils';
 
 // Force dynamic rendering for this API route
@@ -47,18 +47,31 @@ async function validateUploadedFile(file: File): Promise<NextResponse | null> {
  * Verifies user has access to the specified workspace
  */
 async function verifyWorkspaceAccess(
-  workspaceId: string, 
+  workspaceId: string,
   userId: string
 ): Promise<NextResponse | null> {
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      id: workspaceId,
-      users: { some: { id: userId } }
-    }
+  // Check if user exists and get their role
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
   });
 
-  if (!workspace) {
-    return validationResponses.forbidden(ERROR_MESSAGES.WORKSPACE_ACCESS_DENIED);
+  // SUPER_ADMIN has access to all workspaces
+  if (user?.role === 'SUPER_ADMIN') {
+    return null;
+  }
+
+  const workspaceWithUser = await prisma.workspace.findFirst({
+    where: {
+      id: workspaceId,
+      users: { some: { id: userId } },
+    },
+  });
+
+  if (!workspaceWithUser) {
+    return validationResponses.forbidden(
+      ERROR_MESSAGES.WORKSPACE_ACCESS_DENIED
+    );
   }
 
   return null; // Access granted
@@ -68,8 +81,8 @@ async function verifyWorkspaceAccess(
  * Processes the file upload and saves metadata to database
  */
 async function processFileUpload(
-  file: File, 
-  workspaceId: string, 
+  file: File,
+  workspaceId: string,
   userId: string
 ) {
   // Convert file to buffer
@@ -116,62 +129,82 @@ async function processFileUpload(
 }
 
 export async function POST(request: NextRequest) {
-  // Apply rate limiting
-  const rateLimitResponse = await applyRateLimit(request, rateLimiters.upload);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+  try {
+    // Apply rate limiting
+    const rateLimitResponse = await applyRateLimit(
+      request,
+      rateLimiters.upload
+    );
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
-  // Apply request size limits
-  return RequestLimits.withRequestLimits(async () => {
+    // Apply request size limits
+    const validation = await RequestLimits.validateRequest(
+      request,
+      requestLimits.upload
+    );
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error: validation.error,
+          code: validation.code,
+        },
+        { status: validation.code === 'BODY_TOO_LARGE' ? 413 : 400 }
+      );
+    }
+
     // Apply CSRF protection
     return withCSRFProtection(request, async () => {
-      try {
-        // Authentication check
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-          return validationResponses.unauthorized();
-        }
-
-        // Parse form data
-        const formData = await request.formData();
-        const file = formData.get('file') as File;
-        const workspaceId = formData.get('workspaceId') as string;
-
-        if (!file || !workspaceId) {
-          return validationResponses.validationError(
-            'File and workspaceId are required'
-          );
-        }
-
-        // Validate workspace ID format
-        const validation = validateWithSchema(commonSchemas.fileUpload, { workspaceId });
-        if (!validation.success) {
-          return validationResponses.validationError(
-            ERROR_MESSAGES.INVALID_INPUT,
-            validation.errors
-          );
-        }
-
-        // Verify workspace access
-        const accessError = await verifyWorkspaceAccess(workspaceId, session.user.id);
-        if (accessError) return accessError;
-
-        // Validate uploaded file
-        const fileError = await validateUploadedFile(file);
-        if (fileError) return fileError;
-
-        // Process file upload
-        const photo = await processFileUpload(file, workspaceId, session.user.id);
-
-        return NextResponse.json({ 
-          photo,
-          message: SUCCESS_MESSAGES.PHOTO_UPLOADED 
-        });
-      } catch (error) {
-        console.error('Error uploading photo:', error);
-        return validationResponses.serverError('Failed to upload photo');
+      // Authentication check
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return validationResponses.unauthorized();
       }
+
+      // Parse form data
+      const formData = await request.formData();
+      const file = formData.get('file') as File;
+      const workspaceId = formData.get('workspaceId') as string;
+
+      if (!file || !workspaceId) {
+        return validationResponses.validationError(
+          'File and workspaceId are required'
+        );
+      }
+
+      // Validate workspace ID format
+      const schemaValidation = validateWithSchema(commonSchemas.fileUpload, {
+        workspaceId,
+      });
+      if (!schemaValidation.success) {
+        return validationResponses.validationError(
+          ERROR_MESSAGES.INVALID_INPUT,
+          schemaValidation.errors
+        );
+      }
+
+      // Verify workspace access
+      const accessError = await verifyWorkspaceAccess(
+        workspaceId,
+        session.user.id
+      );
+      if (accessError) return accessError;
+
+      // Validate uploaded file
+      const fileError = await validateUploadedFile(file);
+      if (fileError) return fileError;
+
+      // Process file upload
+      const photo = await processFileUpload(file, workspaceId, session.user.id);
+
+      return NextResponse.json({
+        photo,
+        message: SUCCESS_MESSAGES.PHOTO_UPLOADED,
+      });
     });
-  }, requestLimits.upload);
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    return validationResponses.serverError('Failed to upload photo');
+  }
 }

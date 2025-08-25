@@ -2,7 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ServerToClientEvents, ClientToServerEvents } from '@/lib/socket-server';
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from '@/lib/socket-server';
 
 type SocketType = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -13,7 +16,9 @@ export function useSocket(userId?: string, userName?: string) {
     if (!userId || !userName) return;
 
     // Initialize socket connection
-    const socket: SocketType = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000');
+    const socket: SocketType = io(
+      process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000'
+    );
     socketRef.current = socket;
 
     socket.on('connect', () => {

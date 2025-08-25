@@ -1,7 +1,7 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { getCurrentUser } from "@/lib/auth-utils";
-import { prisma } from "@/lib/db";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth-utils';
+import { prisma } from '@/lib/db';
 import {
   ArrowLeft,
   Upload,
@@ -11,13 +11,13 @@ import {
   Camera,
   Users,
   Calendar,
-} from "lucide-react";
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { Navigation } from "@/components/Navigation";
-import PhotoGallery from "@/components/PhotoGallery";
-import PhotoUpload from "@/components/PhotoUpload";
-import InviteUsers from "@/components/InviteUsers";
+} from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Navigation } from '@/components/Navigation';
+import PhotoGallery from '@/components/PhotoGallery';
+import PhotoUpload from '@/components/PhotoUpload';
+import InviteUsers from '@/components/InviteUsers';
 
 interface WorkspacePageProps {
   params: {
@@ -29,7 +29,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/auth/signin");
+    redirect('/auth/signin');
   }
 
   // Fetch workspace data
@@ -64,7 +64,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           },
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: 'desc',
         },
       },
     },
@@ -88,14 +88,14 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   }
 
   const userRole = (session.user as any)?.role;
-  const canUpload = userRole === "SUPER_ADMIN" || userRole === "BUSINESS_OWNER";
-  const canManage = userRole === "SUPER_ADMIN";
+  const canUpload = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+  const canManage = userRole === 'SUPER_ADMIN';
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div style={{ paddingTop: "64px" }}>
-        {" "}
+      <div style={{ paddingTop: '64px' }}>
+        {' '}
         {/* Add padding for fixed navbar (16 * 4 = 64px) */}
         {/* Workspace Header */}
         <div className="bg-white shadow-sm border-b">
@@ -115,9 +115,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                 </h1>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">
-                  /{workspace.slug}
-                </span>
+                <span className="text-sm text-gray-500">/{workspace.slug}</span>
               </div>
             </div>
           </div>
@@ -175,11 +173,11 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Photos</h3>
               <div className="text-sm text-gray-500">
-                {userRole === "USER"
-                  ? "Select your favorites by clicking the heart icon"
-                  : userRole === "BUSINESS_OWNER"
-                  ? "View client selections and manage photos"
-                  : "Browse workspace photos"}
+                {userRole === 'USER'
+                  ? 'Select your favorites by clicking the heart icon'
+                  : userRole === 'BUSINESS_OWNER'
+                    ? 'View client selections and manage photos'
+                    : 'Browse workspace photos'}
               </div>
             </div>
 
@@ -188,10 +186,10 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
               userId={session.user.id}
               userRole={userRole}
               canSelect={
-                userRole === "USER" ||
-                userRole === "STAFF" ||
-                userRole === "BUSINESS_OWNER" ||
-                userRole === "SUPER_ADMIN"
+                userRole === 'USER' ||
+                userRole === 'STAFF' ||
+                userRole === 'BUSINESS_OWNER' ||
+                userRole === 'SUPER_ADMIN'
               }
             />
           </div>
@@ -216,16 +214,16 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     </div>
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
-                        user.role === "SUPER_ADMIN"
-                          ? "bg-purple-100 text-purple-800"
-                          : user.role === "BUSINESS_OWNER"
-                          ? "bg-blue-100 text-blue-800"
-                          : user.role === "STAFF"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                        user.role === 'SUPER_ADMIN'
+                          ? 'bg-purple-100 text-purple-800'
+                          : user.role === 'BUSINESS_OWNER'
+                            ? 'bg-blue-100 text-blue-800'
+                            : user.role === 'STAFF'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {user.role?.toLowerCase().replace("_", " ")}
+                      {user.role?.toLowerCase().replace('_', ' ')}
                     </span>
                   </div>
                 ))}
@@ -233,7 +231,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             </div>
           )}
         </div>
-      </div>{" "}
+      </div>{' '}
       {/* Close padding wrapper */}
     </div>
   );

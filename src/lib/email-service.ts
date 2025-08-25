@@ -39,8 +39,15 @@ export class EmailService {
    * Generate invitation email template
    */
   private generateInvitationTemplate(data: InvitationEmailData): EmailTemplate {
-    const { inviteeName, inviterName, workspaceName, role, inviteUrl, expiresAt } = data;
-    
+    const {
+      inviteeName,
+      inviterName,
+      workspaceName,
+      role,
+      inviteUrl,
+      expiresAt,
+    } = data;
+
     const roleDisplayName = role === 'USER' ? 'Client' : 'Staff Member';
     const expiryDate = expiresAt.toLocaleDateString();
     const expiryTime = expiresAt.toLocaleTimeString();
@@ -75,7 +82,9 @@ export class EmailService {
               
               <p><strong>${inviterName}</strong> has invited you to join the workspace <strong>"${workspaceName}"</strong> as a <strong>${roleDisplayName}</strong>.</p>
               
-              ${role === 'USER' ? `
+              ${
+                role === 'USER'
+                  ? `
                 <p>As a client, you'll be able to:</p>
                 <ul>
                   <li>View photos uploaded by the photographer</li>
@@ -83,7 +92,8 @@ export class EmailService {
                   <li>Download your selected photos</li>
                   <li>See real-time updates when new photos are added</li>
                 </ul>
-              ` : `
+              `
+                  : `
                 <p>As a staff member, you'll be able to:</p>
                 <ul>
                   <li>Help manage the workspace</li>
@@ -91,7 +101,8 @@ export class EmailService {
                   <li>Assist with client photo selections</li>
                   <li>Access workspace management tools</li>
                 </ul>
-              `}
+              `
+              }
               
               <div style="text-align: center;">
                 <a href="${inviteUrl}" class="button">Accept Invitation</a>
@@ -118,9 +129,10 @@ Hello ${inviteeName || 'there'}!
 
 ${inviterName} has invited you to join the workspace "${workspaceName}" as a ${roleDisplayName}.
 
-${role === 'USER' ? 
-  'As a client, you\'ll be able to view photos, select favorites, and download your selections.' :
-  'As a staff member, you\'ll be able to help manage the workspace and assist with photo selections.'
+${
+  role === 'USER'
+    ? "As a client, you'll be able to view photos, select favorites, and download your selections."
+    : "As a staff member, you'll be able to help manage the workspace and assist with photo selections."
 }
 
 To accept this invitation, please visit: ${inviteUrl}
@@ -140,14 +152,17 @@ This invitation was sent by ${this.fromName}.
    * Send invitation email
    */
   async sendInvitationEmail(
-    recipientEmail: string, 
+    recipientEmail: string,
     data: InvitationEmailData
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       const template = this.generateInvitationTemplate(data);
 
       // Development mode - log email instead of sending
-      if (process.env.NODE_ENV === 'development' && process.env.FORCE_REAL_EMAILS !== 'true') {
+      if (
+        process.env.NODE_ENV === 'development' &&
+        process.env.FORCE_REAL_EMAILS !== 'true'
+      ) {
         console.log('\n' + '='.repeat(80));
         console.log('📧 DEVELOPMENT EMAIL - Invitation');
         console.log('='.repeat(80));
@@ -164,10 +179,10 @@ This invitation was sent by ${this.fromName}.
         console.log('🔗 COPY THIS INVITATION LINK TO TEST:');
         console.log('   ' + data.inviteUrl);
         console.log('='.repeat(80) + '\n');
-        
-        return { 
-          success: true, 
-          messageId: 'dev-' + Date.now() 
+
+        return {
+          success: true,
+          messageId: 'dev-' + Date.now(),
         };
       }
 
@@ -181,23 +196,22 @@ This invitation was sent by ${this.fromName}.
 
       if (error) {
         console.error('Failed to send invitation email:', error);
-        return { 
-          success: false, 
-          error: error.message || 'Failed to send invitation email'
+        return {
+          success: false,
+          error: error.message || 'Failed to send invitation email',
         };
       }
 
-      return { 
-        success: true, 
-        messageId: emailData?.id 
+      return {
+        success: true,
+        messageId: emailData?.id,
       };
-
     } catch (error) {
       console.error('📧 Failed to send invitation email:', error);
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to send email'
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send email',
       };
     }
   }
@@ -205,10 +219,15 @@ This invitation was sent by ${this.fromName}.
   /**
    * Send test email to verify configuration
    */
-  async sendTestEmail(recipientEmail: string): Promise<{ success: boolean; error?: string }> {
+  async sendTestEmail(
+    recipientEmail: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       // Development mode - log email instead of sending
-      if (process.env.NODE_ENV === 'development' && process.env.FORCE_REAL_EMAILS !== 'true') {
+      if (
+        process.env.NODE_ENV === 'development' &&
+        process.env.FORCE_REAL_EMAILS !== 'true'
+      ) {
         console.log('\n' + '='.repeat(80));
         console.log('📧 DEVELOPMENT EMAIL - Test Email');
         console.log('='.repeat(80));
@@ -216,17 +235,23 @@ This invitation was sent by ${this.fromName}.
         console.log('📥 To:', recipientEmail);
         console.log('📋 Subject: PhotoSelect - Email Service Test');
         console.log('📄 Content:');
-        console.log('   This is a test email to verify your email configuration is working correctly.');
-        console.log('   If you received this email, your Resend integration is properly configured!');
+        console.log(
+          '   This is a test email to verify your email configuration is working correctly.'
+        );
+        console.log(
+          '   If you received this email, your Resend integration is properly configured!'
+        );
         console.log('   Sent at:', new Date().toISOString());
         console.log('='.repeat(80));
         console.log('✅ Email logged successfully (development mode)');
-        console.log('💡 To send real emails in development, set FORCE_REAL_EMAILS=true in .env');
+        console.log(
+          '💡 To send real emails in development, set FORCE_REAL_EMAILS=true in .env'
+        );
         console.log('='.repeat(80) + '\n');
-        
+
         return { success: true };
       }
-      
+
       if (!process.env.RESEND_API_KEY) {
         return { success: false, error: 'Resend API key not configured' };
       }
@@ -247,14 +272,17 @@ This invitation was sent by ${this.fromName}.
       });
 
       if (error) {
-        return { success: false, error: error.message || 'Failed to send test email' };
+        return {
+          success: false,
+          error: error.message || 'Failed to send test email',
+        };
       }
 
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to send email'
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send email',
       };
     }
   }

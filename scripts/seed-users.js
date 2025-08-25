@@ -43,7 +43,7 @@ async function seedUsers() {
         create: userData,
       });
     }
-    
+
     console.log('✅ Users created!');
     console.log('🎉 User seeding completed successfully!');
     console.log(`   - ${sampleUsers.length} users created/updated`);

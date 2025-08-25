@@ -26,8 +26,10 @@ function verifyWebhookSignature(body: string, signature: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    const signature = request.headers.get('stripe-signature') || 
-                     request.headers.get('webhook-signature') || '';
+    const signature =
+      request.headers.get('stripe-signature') ||
+      request.headers.get('webhook-signature') ||
+      '';
 
     // Verify webhook signature for security
     if (!verifyWebhookSignature(body, signature)) {
@@ -40,12 +42,14 @@ export async function POST(request: NextRequest) {
     const event = JSON.parse(body);
 
     // Handle subscription created/activated
-    if (event.type === 'customer.subscription.created' || 
-        event.type === 'invoice.payment_succeeded') {
-      
+    if (
+      event.type === 'customer.subscription.created' ||
+      event.type === 'invoice.payment_succeeded'
+    ) {
       const subscription = event.data.object;
-      const customerEmail = subscription.customer_email || 
-                           event.data.object.customer_details?.email;
+      const customerEmail =
+        subscription.customer_email ||
+        event.data.object.customer_details?.email;
 
       if (!customerEmail) {
         console.error('No customer email found in webhook');
@@ -130,7 +134,9 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        console.log(`Downgraded user ${customerEmail} due to subscription cancellation`);
+        console.log(
+          `Downgraded user ${customerEmail} due to subscription cancellation`
+        );
       }
 
       return NextResponse.json({
@@ -142,7 +148,6 @@ export async function POST(request: NextRequest) {
     // Handle other webhook events as needed
     console.log(`Unhandled webhook event: ${event.type}`);
     return NextResponse.json({ success: true });
-
   } catch (error) {
     console.error('Webhook error:', error);
     return NextResponse.json(

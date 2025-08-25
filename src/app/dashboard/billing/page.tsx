@@ -3,8 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Calendar, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
-import { formatPlanName, formatPrice, getSubscriptionStatus, isSubscriptionActive } from '@/lib/subscription';
+import {
+  CreditCard,
+  Calendar,
+  AlertCircle,
+  ExternalLink,
+  Loader2,
+} from 'lucide-react';
+import {
+  formatPlanName,
+  formatPrice,
+  getSubscriptionStatus,
+  isSubscriptionActive,
+} from '@/lib/subscription';
+import { useToast } from '@/hooks/useToast';
 
 interface Subscription {
   id: string;
@@ -23,6 +35,7 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -58,14 +71,14 @@ export default function BillingPage() {
           window.open(data.portalUrl, '_blank');
         } else {
           // Development mode
-          alert(data.message);
+          showToast(data.message, 'success');
         }
       } else {
         throw new Error(data.error || 'Failed to create portal session');
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
-      alert('Failed to open billing portal. Please try again.');
+      showToast('Failed to open billing portal. Please try again.', 'error');
     } finally {
       setPortalLoading(false);
     }
@@ -101,7 +114,9 @@ export default function BillingPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Billing & Subscription</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Billing & Subscription
+        </h1>
         <p className="mt-2 text-gray-600">
           Manage your subscription and billing information
         </p>
@@ -112,7 +127,9 @@ export default function BillingPage() {
           {/* Current Plan */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Current Plan</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Current Plan
+              </h2>
               {subscription.isDevelopmentMode && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
                   Development Mode
@@ -124,7 +141,9 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center mb-2">
                   <CreditCard className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-500">Plan</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Plan
+                  </span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
                   {formatPlanName(subscription.planType)}
@@ -137,7 +156,9 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center mb-2">
                   <AlertCircle className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-500">Status</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Status
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <span
@@ -161,12 +182,16 @@ export default function BillingPage() {
 
           {/* Billing Period */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Billing Period</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Billing Period
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center mb-2">
                   <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-500">Current Period Start</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Current Period Start
+                  </span>
                 </div>
                 <p className="text-gray-900">
                   {formatDate(subscription.currentPeriodStart)}
@@ -176,7 +201,9 @@ export default function BillingPage() {
               <div>
                 <div className="flex items-center mb-2">
                   <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-500">Current Period End</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Current Period End
+                  </span>
                 </div>
                 <p className="text-gray-900">
                   {formatDate(subscription.currentPeriodEnd)}
@@ -187,13 +214,16 @@ export default function BillingPage() {
 
           {/* Actions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Manage Subscription</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Manage Subscription
+            </h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Billing Portal</p>
                   <p className="text-sm text-gray-600">
-                    Update payment method, download invoices, and manage your subscription
+                    Update payment method, download invoices, and manage your
+                    subscription
                   </p>
                 </div>
                 <button
@@ -231,9 +261,11 @@ export default function BillingPage() {
         /* No Subscription */
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Active Subscription</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            No Active Subscription
+          </h2>
           <p className="text-gray-600 mb-6">
-            You don't have an active subscription. Choose a plan to get started.
+            You don&apos;t have an active subscription. Choose a plan to get started.
           </p>
           <button
             onClick={() => router.push('/pricing')}

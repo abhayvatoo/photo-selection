@@ -52,7 +52,7 @@ export default function PhotoPreviewModal({
 }: PhotoPreviewModalProps) {
   if (!isOpen || !photo) return null;
 
-  const userSelection = photo.selections.find(s => s.userId === userId);
+  const userSelection = photo.selections.find((s) => s.userId === userId);
   const isSelectedByUser = !!userSelection;
 
   /**
@@ -104,7 +104,7 @@ export default function PhotoPreviewModal({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
       onClick={handleBackdropClick}
     >
@@ -143,7 +143,9 @@ export default function PhotoPreviewModal({
             {/* Photo Details */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Details</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  Details
+                </h3>
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Size:</span>
@@ -159,7 +161,9 @@ export default function PhotoPreviewModal({
                   </div>
                   <div className="flex justify-between">
                     <span>By:</span>
-                    <span>{photo.uploadedBy.name || photo.uploadedBy.email}</span>
+                    <span>
+                      {photo.uploadedBy.name || photo.uploadedBy.email}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -172,7 +176,10 @@ export default function PhotoPreviewModal({
                   </h3>
                   <div className="space-y-2">
                     {photo.selections.map((selection) => (
-                      <div key={selection.id} className="flex items-center gap-2 text-sm">
+                      <div
+                        key={selection.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
                         <User className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-600">
                           {selection.user.name || 'Unknown User'}
@@ -201,15 +208,14 @@ export default function PhotoPreviewModal({
                         : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                     } ${isSelecting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <Heart 
-                      className={`w-4 h-4 ${isSelectedByUser ? 'fill-current' : ''}`} 
+                    <Heart
+                      className={`w-4 h-4 ${isSelectedByUser ? 'fill-current' : ''}`}
                     />
-                    {isSelecting 
-                      ? 'Processing...' 
-                      : isSelectedByUser 
-                        ? 'Remove Selection' 
-                        : 'Select Photo'
-                    }
+                    {isSelecting
+                      ? 'Processing...'
+                      : isSelectedByUser
+                        ? 'Remove Selection'
+                        : 'Select Photo'}
                   </button>
                 )}
 

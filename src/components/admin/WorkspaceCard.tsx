@@ -1,9 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Camera, Calendar, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
+import {
+  Users,
+  Camera,
+  Calendar,
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+} from 'lucide-react';
 import { WorkspaceStatus } from '@prisma/client';
 import Link from 'next/link';
+import { useToast } from '@/hooks/useToast';
 
 interface WorkspaceCardProps {
   workspace: {
@@ -33,6 +42,7 @@ interface WorkspaceCardProps {
 
 export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const { showToast } = useToast();
 
   const getStatusColor = (status: WorkspaceStatus) => {
     switch (status) {
@@ -70,13 +80,15 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
             </p>
           )}
         </div>
-        
+
         {/* Status Badge */}
         <div className="relative">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}
+          >
             {workspace.status.toLowerCase()}
           </span>
-          
+
           {/* Dropdown Menu */}
           <div className="relative ml-2 inline-block">
             <button
@@ -85,7 +97,7 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
             >
               <MoreVertical className="h-4 w-4 text-gray-500" />
             </button>
-            
+
             {showDropdown && (
               <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
                 <div className="py-1">
@@ -106,9 +118,16 @@ export function WorkspaceCard({ workspace }: WorkspaceCardProps) {
                   <button
                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     onClick={() => {
-                      if (confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone and will delete all photos and data in this workspace.`)) {
+                      if (
+                        confirm(
+                          `Are you sure you want to delete "${workspace.name}"? This action cannot be undone and will delete all photos and data in this workspace.`
+                        )
+                      ) {
                         // TODO: Implement actual delete API call
-                        alert('Delete functionality will be implemented in a future update. For now, please contact support to delete workspaces.');
+                        showToast(
+                          'Delete functionality will be implemented in a future update. For now, please contact support to delete workspaces.',
+                          'warning'
+                        );
                       }
                     }}
                   >

@@ -9,14 +9,22 @@ export const FILE_UPLOAD = {
   MAX_SIZE_MB: 10,
   ALLOWED_MIME_TYPES: [
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
     'image/bmp',
     'image/tiff',
   ],
-  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'],
+  ALLOWED_EXTENSIONS: [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.tiff',
+  ],
 } as const;
 
 // Rate Limiting Constants

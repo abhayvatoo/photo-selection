@@ -59,14 +59,21 @@ export async function createInvitation({
     throw new Error('Cannot invite Super Admin users');
   }
 
-  if (role === UserRole.BUSINESS_OWNER && inviter.role !== UserRole.SUPER_ADMIN) {
+  if (
+    role === UserRole.BUSINESS_OWNER &&
+    inviter.role !== UserRole.SUPER_ADMIN
+  ) {
     throw new Error('Only Super Admin can invite Business Owners');
   }
 
-  if ((role === UserRole.STAFF || role === UserRole.USER) && 
-      inviter.role !== UserRole.SUPER_ADMIN && 
-      inviter.role !== UserRole.BUSINESS_OWNER) {
-    throw new Error('Only Super Admin or Business Owner can invite Staff/Users');
+  if (
+    (role === UserRole.STAFF || role === UserRole.USER) &&
+    inviter.role !== UserRole.SUPER_ADMIN &&
+    inviter.role !== UserRole.BUSINESS_OWNER
+  ) {
+    throw new Error(
+      'Only Super Admin or Business Owner can invite Staff/Users'
+    );
   }
 
   // For STAFF and USER, workspace is required
@@ -214,7 +221,10 @@ export async function getInvitationByToken(token: string) {
   }
 
   // Don't return expired or used invitations
-  if (invitation.status !== InvitationStatus.PENDING || invitation.expiresAt < new Date()) {
+  if (
+    invitation.status !== InvitationStatus.PENDING ||
+    invitation.expiresAt < new Date()
+  ) {
     return null;
   }
 
@@ -222,7 +232,10 @@ export async function getInvitationByToken(token: string) {
 }
 
 // Revoke invitation
-export async function revokeInvitation(invitationId: string, revokedById: string) {
+export async function revokeInvitation(
+  invitationId: string,
+  revokedById: string
+) {
   const invitation = await prisma.invitation.findUnique({
     where: { id: invitationId },
   });
@@ -241,9 +254,11 @@ export async function revokeInvitation(invitationId: string, revokedById: string
   }
 
   // Only the inviter, super admin, or business owner can revoke
-  if (invitation.invitedById !== revokedById && 
-      revoker.role !== UserRole.SUPER_ADMIN &&
-      revoker.role !== UserRole.BUSINESS_OWNER) {
+  if (
+    invitation.invitedById !== revokedById &&
+    revoker.role !== UserRole.SUPER_ADMIN &&
+    revoker.role !== UserRole.BUSINESS_OWNER
+  ) {
     throw new Error('Insufficient permissions to revoke invitation');
   }
 

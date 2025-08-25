@@ -22,10 +22,12 @@ export default function Unauthorized() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-600">
-              This page requires specific permissions that your account doesn't have.
+              This page requires specific permissions that your account doesn't
+              have.
             </p>
             <p className="text-sm text-gray-600">
-              If you believe this is an error, please contact your administrator.
+              If you believe this is an error, please contact your
+              administrator.
             </p>
             <Link
               href="/"

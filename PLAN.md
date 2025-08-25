@@ -1,6 +1,7 @@
 # Next.js Photo Selection App
 
 ## Notes
+
 - Multi-user photo selection functionality required
 - Need filtering capability to view photos selected by specific people
 - Users should be able to select multiple photos
@@ -103,6 +104,7 @@
 - Multi-user photo selection functionality ready for testing
 
 ## Task List
+
 - [x] Set up Next.js project structure
 - [x] Design database schema for photos and user selections
 - [x] Create user authentication/identification system
@@ -201,4 +203,5 @@
   - [x] Verify UI displays seeded users and photos correctly
 
 ## Current Goal
+
 Test multi-user functionality and photo selection features

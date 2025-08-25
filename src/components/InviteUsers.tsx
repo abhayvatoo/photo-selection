@@ -3,18 +3,29 @@
 import { useState, useEffect } from 'react';
 import { UserRole } from '@prisma/client';
 import { AlertTriangle } from 'lucide-react';
+import { csrfPostJSON } from '@/lib/csrf-fetch';
 
 interface InviteUsersProps {
   userRole: UserRole;
   workspaceId?: string;
 }
 
-export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps) {
+export default function InviteUsers({
+  userRole,
+  workspaceId,
+}: InviteUsersProps) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.USER);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [userLimit, setUserLimit] = useState<{ allowed: boolean; current: number; limit: number } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const [userLimit, setUserLimit] = useState<{
+    allowed: boolean;
+    current: number;
+    limit: number;
+  } | null>(null);
 
   useEffect(() => {
     if (workspaceId) {
@@ -24,9 +35,11 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
 
   const checkUserLimit = async () => {
     if (!workspaceId) return;
-    
+
     try {
-      const response = await fetch(`/api/user/user-limit?workspaceId=${workspaceId}`);
+      const response = await fetch(
+        `/api/user/user-limit?workspaceId=${workspaceId}`
+      );
       if (response.ok) {
         const data = await response.json();
         setUserLimit(data);
@@ -36,7 +49,8 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
     }
   };
 
-  const canInvite = userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;
+  const canInvite =
+    userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;
 
   const availableRoles = () => {
     if (userRole === UserRole.SUPER_ADMIN) {
@@ -62,7 +76,7 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
     if (userLimit && !userLimit.allowed) {
       setMessage({
         type: 'error',
-        text: `User limit reached. You can only have ${userLimit.limit} users in this workspace.`
+        text: `User limit reached. You can only have ${userLimit.limit} users in this workspace.`,
       });
       return;
     }
@@ -71,16 +85,13 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
     setMessage(null);
 
     try {
-      const response = await fetch('/api/invitations/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          role,
-          workspaceId: (role === UserRole.STAFF || role === UserRole.USER) ? workspaceId : undefined,
-        }),
+      const response = await csrfPostJSON('/api/invitations/create', {
+        email,
+        role,
+        workspaceId:
+          role === UserRole.STAFF || role === UserRole.USER
+            ? workspaceId
+            : undefined,
       });
 
       const data = await response.json();
@@ -115,7 +126,7 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Users</h3>
-      
+
       {/* User Limit Warning */}
       {userLimit && !userLimit.allowed && (
         <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
@@ -126,10 +137,15 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
                 User Limit Reached
               </p>
               <p className="text-sm text-orange-700 mt-1">
-                You've reached your limit of {userLimit.limit} users in this workspace. 
-                <a href="/pricing" className="underline hover:no-underline ml-1">
+                You've reached your limit of {userLimit.limit} users in this
+                workspace.
+                <a
+                  href="/pricing"
+                  className="underline hover:no-underline ml-1"
+                >
                   Upgrade your plan
-                </a> to invite more users.
+                </a>{' '}
+                to invite more users.
               </p>
             </div>
           </div>
@@ -146,10 +162,13 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
           </p>
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email Address
           </label>
           <input
@@ -164,7 +183,10 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
         </div>
 
         <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="role"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Role
           </label>
           <select
@@ -182,11 +204,13 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
         </div>
 
         {message && (
-          <div className={`p-3 rounded-md ${
-            message.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
+          <div
+            className={`p-3 rounded-md ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
             <p className="text-sm">{message.text}</p>
           </div>
         )}
@@ -201,7 +225,9 @@ export default function InviteUsers({ userRole, workspaceId }: InviteUsersProps)
       </form>
 
       <div className="mt-6 p-4 bg-gray-50 rounded-md">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">How it works:</h4>
+        <h4 className="text-sm font-medium text-gray-900 mb-2">
+          How it works:
+        </h4>
         <ul className="text-sm text-gray-600 space-y-1">
           <li>• User receives a secure invitation link via email</li>
           <li>• They sign in with their email (magic link)</li>

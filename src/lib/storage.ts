@@ -1,5 +1,13 @@
-import { uploadPhoto as uploadToGCS, deletePhoto as deleteFromGCS, UploadResult } from './gcs';
-import { uploadPhotoLocally, deletePhotoLocally, LocalUploadResult } from './local-storage';
+import {
+  uploadPhoto as uploadToGCS,
+  deletePhoto as deleteFromGCS,
+  UploadResult,
+} from './gcs';
+import {
+  uploadPhotoLocally,
+  deletePhotoLocally,
+  LocalUploadResult,
+} from './local-storage';
 
 export interface StorageResult {
   filename: string;
@@ -30,7 +38,10 @@ export async function uploadPhoto(
         storageType: 'gcs',
       };
     } catch (error: any) {
-      console.warn('⚠️ GCS upload failed, falling back to local storage:', error.message);
+      console.warn(
+        '⚠️ GCS upload failed, falling back to local storage:',
+        error.message
+      );
       // Fall back to local storage
     }
   }
@@ -42,7 +53,10 @@ export async function uploadPhoto(
   };
 }
 
-export async function deletePhoto(filename: string, storageType: 'gcs' | 'local'): Promise<void> {
+export async function deletePhoto(
+  filename: string,
+  storageType: 'gcs' | 'local'
+): Promise<void> {
   if (storageType === 'gcs' && isGCSConfigured()) {
     try {
       await deleteFromGCS(filename);

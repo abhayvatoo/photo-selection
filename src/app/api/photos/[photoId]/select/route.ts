@@ -12,20 +12,24 @@ import { withErrorHandler } from '@/lib/error-handling';
 export const dynamic = 'force-dynamic';
 
 // Validate photo access for user
-async function validatePhotoAccess(photoId: number, userId: string, userRole: UserRole): Promise<boolean> {
+async function validatePhotoAccess(
+  photoId: number,
+  userId: string,
+  userRole: UserRole
+): Promise<boolean> {
   const photo = await prisma.photo.findUnique({
     where: { id: photoId },
-    select: { 
+    select: {
       workspaceId: true,
       workspace: {
         select: {
           users: {
             where: { id: userId },
-            select: { id: true }
-          }
-        }
-      }
-    }
+            select: { id: true },
+          },
+        },
+      },
+    },
   });
 
   if (!photo) {
@@ -40,19 +44,19 @@ async function validatePhotoAccess(photoId: number, userId: string, userRole: Us
   // Check if user belongs to the photo's workspace
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { workspaceId: true }
+    select: { workspaceId: true },
   });
 
   return user?.workspaceId === photo.workspaceId;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { photoId: string } }
-) {
-  return withErrorHandler(async () => {
+export const POST = withErrorHandler(
+  async (request: NextRequest, { params }: { params: { photoId: string } }) => {
     // Apply rate limiting
-    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
+    const rateLimitResponse = await applyRateLimit(
+      request,
+      rateLimiters.general
+    );
     if (rateLimitResponse) {
       return rateLimitResponse;
     }
@@ -62,7 +66,10 @@ export async function POST(
       // 1. Authentication check
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
       }
 
       const { photoId } = params;
@@ -71,19 +78,28 @@ export async function POST(
 
       // 2. Input validation
       if (!photoId || typeof photoId !== 'string') {
-        return NextResponse.json({ error: 'Valid photo ID is required' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Valid photo ID is required' },
+          { status: 400 }
+        );
       }
 
       // Convert photoId from string to integer with validation
       const photoIdInt = parseInt(photoId);
       if (isNaN(photoIdInt) || photoIdInt <= 0) {
-        return NextResponse.json({ error: 'Invalid photo ID format' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid photo ID format' },
+          { status: 400 }
+        );
       }
 
       // 3. Workspace access control
       const hasAccess = await validatePhotoAccess(photoIdInt, userId, userRole);
       if (!hasAccess) {
-        return NextResponse.json({ error: 'Access denied to this photo' }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Access denied to this photo' },
+          { status: 403 }
+        );
       }
 
       // 4. Check if selection already exists
@@ -97,7 +113,7 @@ export async function POST(
       });
 
       let selected = false;
-      
+
       if (existingSelection) {
         // Remove selection
         await prisma.photoSelection.delete({
@@ -146,22 +162,19 @@ export async function POST(
         },
       });
 
-      return NextResponse.json({ 
-        selected, 
+      return NextResponse.json({
+        selected,
         photo,
-        message: `Photo ${selected ? 'selected' : 'deselected'} successfully`
+        message: `Photo ${selected ? 'selected' : 'deselected'} successfully`,
       });
     });
-  });
-}
+  }
+);
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { photoId: string } }
-) {
-  try {
+export const DELETE = withErrorHandler(
+  async (request: NextRequest, { params }: { params: { photoId: string } }) => {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -230,16 +243,10 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({ 
-      selected: false, 
+    return NextResponse.json({
+      selected: false,
       photo,
-      message: 'Photo deselected successfully'
+      message: 'Photo deselected successfully',
     });
-  } catch (error) {
-    console.error('Error deselecting photo:', error);
-    return NextResponse.json(
-      { error: 'Failed to deselect photo' },
-      { status: 500 }
-    );
   }
-}
+);

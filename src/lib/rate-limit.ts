@@ -35,10 +35,10 @@ export class RateLimiter {
 
     // Fall back to IP address
     const forwarded = request.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0] : 
-               request.headers.get('x-real-ip') || 
-               'unknown';
-    
+    const ip = forwarded
+      ? forwarded.split(',')[0]
+      : request.headers.get('x-real-ip') || 'unknown';
+
     return `ip:${ip}`;
   }
 
@@ -60,7 +60,7 @@ export class RateLimiter {
 
     // Get or create client record
     let clientRecord = rateLimitStore.get(clientId);
-    
+
     if (!clientRecord || clientRecord.resetTime <= now) {
       // Create new window
       clientRecord = {
@@ -88,7 +88,7 @@ export class RateLimiter {
   async increment(request: NextRequest): Promise<void> {
     const clientId = this.getClientId(request);
     const clientRecord = rateLimitStore.get(clientId);
-    
+
     if (clientRecord) {
       clientRecord.count++;
       rateLimitStore.set(clientId, clientRecord);
@@ -105,7 +105,7 @@ export class RateLimiter {
         keysToDelete.push(key);
       }
     });
-    keysToDelete.forEach(key => rateLimitStore.delete(key));
+    keysToDelete.forEach((key) => rateLimitStore.delete(key));
   }
 
   /**
@@ -114,7 +114,7 @@ export class RateLimiter {
   middleware() {
     return async (request: NextRequest): Promise<NextResponse | null> => {
       const result = await this.isRateLimited(request);
-      
+
       if (result.limited) {
         return NextResponse.json(
           {
@@ -127,7 +127,9 @@ export class RateLimiter {
               'X-RateLimit-Limit': this.config.maxRequests.toString(),
               'X-RateLimit-Remaining': result.remaining.toString(),
               'X-RateLimit-Reset': result.resetTime.toString(),
-              'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString(),
+              'Retry-After': Math.ceil(
+                (result.resetTime - Date.now()) / 1000
+              ).toString(),
             },
           }
         );
@@ -135,7 +137,7 @@ export class RateLimiter {
 
       // Increment counter for this request
       await this.increment(request);
-      
+
       return null; // Continue to next middleware/handler
     };
   }

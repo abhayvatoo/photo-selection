@@ -19,36 +19,44 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
 // Validate filename security
 function validateFilename(filename: string): boolean {
   // Check for directory traversal attempts
-  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+  if (
+    filename.includes('..') ||
+    filename.includes('/') ||
+    filename.includes('\\')
+  ) {
     return false;
   }
-  
+
   // Check for null bytes and other dangerous characters
   if (filename.includes('\0') || filename.includes('%00')) {
     return false;
   }
-  
+
   // Check file extension
   const ext = path.extname(filename).toLowerCase();
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     return false;
   }
-  
+
   // Check filename length
   if (filename.length > 255) {
     return false;
   }
-  
+
   return true;
 }
 
 // Validate user access to uploaded file
-async function validateFileAccess(filename: string, userId: string, userRole: UserRole): Promise<boolean> {
+async function validateFileAccess(
+  filename: string,
+  userId: string,
+  userRole: UserRole
+): Promise<boolean> {
   try {
     // Get user's workspace
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { workspaceId: true }
+      select: { workspaceId: true },
     });
 
     if (!user?.workspaceId && userRole !== UserRole.SUPER_ADMIN) {
@@ -58,12 +66,12 @@ async function validateFileAccess(filename: string, userId: string, userRole: Us
     // Find photo by filename to verify workspace access
     const photo = await prisma.photo.findFirst({
       where: {
-        filename: filename
+        filename: filename,
       },
       select: {
         id: true,
-        workspaceId: true
-      }
+        workspaceId: true,
+      },
     });
 
     if (!photo) {
@@ -105,13 +113,16 @@ function getContentType(filename: string): string {
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { filename: string } }
-) {
-  return withErrorHandler(async () => {
+export const GET = withErrorHandler(
+  async (
+    request: NextRequest,
+    { params }: { params: { filename: string } }
+  ) => {
     // 1. Rate limiting for file serving
-    const rateLimitResponse = await applyRateLimit(request, rateLimiters.general);
+    const rateLimitResponse = await applyRateLimit(
+      request,
+      rateLimiters.general
+    );
     if (rateLimitResponse) {
       return rateLimitResponse;
     }
@@ -119,7 +130,10 @@ export async function GET(
     // 2. Authentication check
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
     const userId = session.user.id;
@@ -127,14 +141,20 @@ export async function GET(
 
     // 3. Input validation
     const { filename } = params;
-    
+
     if (!filename || typeof filename !== 'string') {
-      return NextResponse.json({ error: 'Invalid filename parameter' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid filename parameter' },
+        { status: 400 }
+      );
     }
 
     // 4. Filename security validation
     if (!validateFilename(filename)) {
-      return NextResponse.json({ error: 'Invalid filename format' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid filename format' },
+        { status: 400 }
+      );
     }
 
     // 5. Validate user access to file
@@ -158,7 +178,7 @@ export async function GET(
     }
 
     // Check file size before reading
-    const stats = await import('fs/promises').then(fs => fs.stat(filePath));
+    const stats = await import('fs/promises').then((fs) => fs.stat(filePath));
     if (stats.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'File too large' }, { status: 413 });
     }
@@ -181,5 +201,5 @@ export async function GET(
       status: 200,
       headers,
     });
-  });
-}
+  }
+);

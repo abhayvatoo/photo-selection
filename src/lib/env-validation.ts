@@ -3,7 +3,9 @@ import { z } from 'zod';
 // Environment validation schemas
 const requiredEnvSchema = z.object({
   DATABASE_URL: z.string().url('Invalid database URL'),
-  NEXTAUTH_SECRET: z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
+  NEXTAUTH_SECRET: z
+    .string()
+    .min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
   NEXTAUTH_URL: z.string().url('Invalid NEXTAUTH_URL'),
 });
 
@@ -38,10 +40,21 @@ const optionalEnvSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional(),
 
   // Security settings
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  ENABLE_SECURITY_HEADERS: z.string().optional().transform(val => (val || 'true') === 'true'),
-  ENABLE_RATE_LIMITING: z.string().optional().transform(val => (val || 'true') === 'true'),
-  ENABLE_CSRF_PROTECTION: z.string().optional().transform(val => (val || 'true') === 'true'),
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+  ENABLE_SECURITY_HEADERS: z
+    .string()
+    .optional()
+    .transform((val) => (val || 'true') === 'true'),
+  ENABLE_RATE_LIMITING: z
+    .string()
+    .optional()
+    .transform((val) => (val || 'true') === 'true'),
+  ENABLE_CSRF_PROTECTION: z
+    .string()
+    .optional()
+    .transform((val) => (val || 'true') === 'true'),
 });
 
 export interface EnvironmentConfig {
@@ -59,7 +72,9 @@ export interface EnvironmentConfig {
 }
 
 export class EnvironmentValidator {
-  private static validatedEnv: z.infer<typeof requiredEnvSchema> & z.infer<typeof optionalEnvSchema> | null = null;
+  private static validatedEnv:
+    | (z.infer<typeof requiredEnvSchema> & z.infer<typeof optionalEnvSchema>)
+    | null = null;
   private static config: EnvironmentConfig | null = null;
 
   /**
@@ -78,24 +93,28 @@ export class EnvironmentValidator {
       // Validate required environment variables
       const requiredResult = requiredEnvSchema.safeParse(process.env);
       if (!requiredResult.success) {
-        errors.push(...requiredResult.error.issues.map((err: any) => 
-          `${err.path.join('.')}: ${err.message}`
-        ));
+        errors.push(
+          ...requiredResult.error.issues.map(
+            (err: any) => `${err.path.join('.')}: ${err.message}`
+          )
+        );
       }
 
       // Validate optional environment variables
       const optionalResult = optionalEnvSchema.safeParse(process.env);
       if (!optionalResult.success) {
-        warnings.push(...optionalResult.error.issues.map((err: any) => 
-          `${err.path.join('.')}: ${err.message}`
-        ));
+        warnings.push(
+          ...optionalResult.error.issues.map(
+            (err: any) => `${err.path.join('.')}: ${err.message}`
+          )
+        );
       }
 
       if (errors.length > 0) {
         return { success: false, errors, warnings };
       }
 
-      // Merge validated environment variables  
+      // Merge validated environment variables
       const requiredEnv = requiredResult.data!;
       const optionalEnv = optionalResult.data!;
       this.validatedEnv = { ...requiredEnv, ...optionalEnv };
@@ -106,14 +125,15 @@ export class EnvironmentValidator {
       // Additional validation warnings
       this.addConfigurationWarnings(warnings);
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         warnings: warnings.length > 0 ? warnings : undefined,
         config: this.config,
       };
-
     } catch (err: any) {
-      errors.push(`Environment validation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      errors.push(
+        `Environment validation failed: ${err instanceof Error ? err.message : 'Unknown error'}`
+      );
       return { success: false, errors };
     }
   }
@@ -131,12 +151,21 @@ export class EnvironmentValidator {
     return {
       isProduction: env.NODE_ENV === 'production',
       isDevelopment: env.NODE_ENV === 'development',
-      hasStripe: !!(env.STRIPE_SECRET_KEY && env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
-      hasEmail: !!(env.EMAIL_SERVER || (env.EMAIL_SERVER_HOST && env.EMAIL_SERVER_USER)),
+      hasStripe: !!(
+        env.STRIPE_SECRET_KEY && env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+      ),
+      hasEmail: !!(
+        env.EMAIL_SERVER ||
+        (env.EMAIL_SERVER_HOST && env.EMAIL_SERVER_USER)
+      ),
       hasGoogleAuth: !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
       hasFileStorage: !!(
-        (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.AWS_S3_BUCKET) ||
-        (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)
+        (env.AWS_ACCESS_KEY_ID &&
+          env.AWS_SECRET_ACCESS_KEY &&
+          env.AWS_S3_BUCKET) ||
+        (env.CLOUDINARY_CLOUD_NAME &&
+          env.CLOUDINARY_API_KEY &&
+          env.CLOUDINARY_API_SECRET)
       ),
       securityEnabled: {
         headers: env.ENABLE_SECURITY_HEADERS,
@@ -157,49 +186,68 @@ export class EnvironmentValidator {
     // Production-specific warnings
     if (this.config.isProduction) {
       if (!this.config.hasStripe) {
-        warnings.push('Production environment without Stripe configuration - subscription features will be disabled');
+        warnings.push(
+          'Production environment without Stripe configuration - subscription features will be disabled'
+        );
       }
-      
+
       if (!this.config.hasEmail) {
-        warnings.push('Production environment without email configuration - magic links will not work');
+        warnings.push(
+          'Production environment without email configuration - magic links will not work'
+        );
       }
 
       if (env.NEXTAUTH_SECRET.length < 64) {
-        warnings.push('NEXTAUTH_SECRET should be at least 64 characters in production');
+        warnings.push(
+          'NEXTAUTH_SECRET should be at least 64 characters in production'
+        );
       }
 
       if (!env.STRIPE_WEBHOOK_SECRET && this.config.hasStripe) {
-        warnings.push('STRIPE_WEBHOOK_SECRET missing - webhook signature verification disabled');
+        warnings.push(
+          'STRIPE_WEBHOOK_SECRET missing - webhook signature verification disabled'
+        );
       }
     }
 
     // Development-specific warnings
     if (this.config.isDevelopment) {
       if (this.config.hasStripe && !env.STRIPE_WEBHOOK_SECRET) {
-        warnings.push('Development mode: Stripe webhook signature verification disabled');
+        warnings.push(
+          'Development mode: Stripe webhook signature verification disabled'
+        );
       }
     }
 
     // Security warnings
     if (!this.config.securityEnabled.headers) {
-      warnings.push('Security headers disabled - application may be vulnerable to XSS and other attacks');
+      warnings.push(
+        'Security headers disabled - application may be vulnerable to XSS and other attacks'
+      );
     }
 
     if (!this.config.securityEnabled.rateLimiting) {
-      warnings.push('Rate limiting disabled - application vulnerable to DoS attacks');
+      warnings.push(
+        'Rate limiting disabled - application vulnerable to DoS attacks'
+      );
     }
 
     if (!this.config.securityEnabled.csrfProtection) {
-      warnings.push('CSRF protection disabled - application vulnerable to CSRF attacks');
+      warnings.push(
+        'CSRF protection disabled - application vulnerable to CSRF attacks'
+      );
     }
   }
 
   /**
    * Get validated environment variables
    */
-  static getEnv(): z.infer<typeof requiredEnvSchema> & z.infer<typeof optionalEnvSchema> {
+  static getEnv(): z.infer<typeof requiredEnvSchema> &
+    z.infer<typeof optionalEnvSchema> {
     if (!this.validatedEnv) {
-      throw new Error('Environment not validated. Call validateEnvironment() first.');
+      throw new Error(
+        'Environment not validated. Call validateEnvironment() first.'
+      );
     }
     return this.validatedEnv;
   }
@@ -209,7 +257,9 @@ export class EnvironmentValidator {
    */
   static getConfig(): EnvironmentConfig {
     if (!this.config) {
-      throw new Error('Environment not validated. Call validateEnvironment() first.');
+      throw new Error(
+        'Environment not validated. Call validateEnvironment() first.'
+      );
     }
     return this.config;
   }
@@ -235,7 +285,10 @@ export class EnvironmentValidator {
   /**
    * Validate specific environment variable at runtime
    */
-  static validateEnvVar(key: string, schema: z.ZodSchema): {
+  static validateEnvVar(
+    key: string,
+    schema: z.ZodSchema
+  ): {
     success: boolean;
     value?: any;
     error?: string;
@@ -247,13 +300,13 @@ export class EnvironmentValidator {
       } else {
         return {
           success: false,
-          error: result.error.issues.map((e: any) => e.message).join(', ')
+          error: result.error.issues.map((e: any) => e.message).join(', '),
         };
       }
     } catch (err: any) {
-      return { 
-        success: false, 
-        error: err instanceof Error ? err.message : 'Unknown error'
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Unknown error',
       };
     }
   }
@@ -266,7 +319,7 @@ export function initializeEnvironment(): void {
   if (typeof window !== 'undefined') return; // Client-side skip
 
   const result = EnvironmentValidator.validateEnvironment();
-  
+
   if (!result.success) {
     console.error('❌ Environment validation failed:');
     if (result.errors) {
@@ -279,11 +332,11 @@ export function initializeEnvironment(): void {
 
   if (result.warnings && result.warnings.length > 0) {
     console.warn('⚠️  Environment warnings:');
-    result.warnings.forEach(warning => console.warn(`  - ${warning}`));
+    result.warnings.forEach((warning) => console.warn(`  - ${warning}`));
   }
 
   console.log('✅ Environment validation passed');
-  
+
   if (result.config) {
     console.log('📋 Configuration:', {
       environment: result.config.isProduction ? 'production' : 'development',

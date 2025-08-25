@@ -13,17 +13,20 @@ export function useInfiniteScroll({
   hasMore,
   isLoading,
   onLoadMore,
-  threshold = 200
+  threshold = 200,
 }: UseInfiniteScrollOptions) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement | null>(null);
 
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [target] = entries;
-    if (target.isIntersecting && hasMore && !isLoading) {
-      onLoadMore();
-    }
-  }, [hasMore, isLoading, onLoadMore]);
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMore && !isLoading) {
+        onLoadMore();
+      }
+    },
+    [hasMore, isLoading, onLoadMore]
+  );
 
   useEffect(() => {
     const element = loadingRef.current;
