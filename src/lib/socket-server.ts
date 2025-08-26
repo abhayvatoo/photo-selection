@@ -1,6 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { prisma } from './db';
+import { randomUUID } from 'crypto';
 
 export interface SocketData {
   userId?: string;
@@ -80,6 +81,7 @@ export function initializeSocket(httpServer: HTTPServer) {
           // Add selection
           await prisma.photoSelection.create({
             data: {
+              id: randomUUID(),
               photoId: photoIdInt,
               userId,
             },

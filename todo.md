@@ -10,3 +10,5 @@ list of things need to be implemented or improved:
 - improve photo cards ux
 - no api calls in use effect
 - server functions vs server components
+- super admin to admin
+- fetchPhotos in photoGallery

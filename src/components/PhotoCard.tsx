@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useCallback } from 'react';
-import { Heart, Download, Eye, Trash2 } from 'lucide-react';
+import { Heart, Download, Eye, Trash2, Check, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { UI } from '@/lib/constants';
 
@@ -92,10 +92,12 @@ const PhotoCard = memo(function PhotoCard({
   }, [onDelete, photo.id]);
 
   return (
-    <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+    <div className={`group relative bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden ${
+      isSelectedByUser ? 'ring-2 ring-green-500 ring-offset-2' : ''
+    }`}>
       {/* Photo Image */}
       <div
-        className="relative aspect-square cursor-pointer"
+        className="relative aspect-square cursor-pointer touch-manipulation transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
         onClick={handlePreview}
       >
         <Image
@@ -103,73 +105,84 @@ const PhotoCard = memo(function PhotoCard({
           alt={photo.originalName}
           fill
           className="object-cover transition-transform duration-200 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          loading="lazy"
+          quality={85}
         />
 
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-          <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-        </div>
+        {/* Selection indicator overlay */}
+        {isSelectedByUser && (
+          <div className="absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center">
+            <div className="bg-green-500 text-white rounded-full p-2 shadow-lg">
+              <Check className="w-6 h-6 stroke-[3]" />
+            </div>
+          </div>
+        )}
+
+        {/* Subtle hover effect for desktop - no janky overlay */}
+        <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-5 transition-all duration-200 hidden md:block"></div>
       </div>
 
       {/* Photo Info */}
       <div className="p-3">
         {/* File name */}
-        <h3 className="text-sm font-medium text-gray-900 truncate mb-1">
+        <h3 className="text-sm font-medium text-gray-900 truncate mb-1" title={photo.originalName}>
           {photo.originalName}
         </h3>
 
-        {/* Uploaded by */}
-        <p className="text-xs text-gray-500 mb-2">
+        {/* Uploaded by - hidden on mobile to save space */}
+        <p className="text-xs text-gray-500 mb-2 hidden sm:block">
           by {photo.uploadedBy.name || photo.uploadedBy.email}
         </p>
 
         {/* Actions */}
         <div className="flex items-center justify-between">
-          {/* Selection button */}
+          {/* Selection button - larger touch target on mobile */}
           {canSelect && (
             <button
               onClick={handleSelect}
               disabled={isSelecting}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors touch-manipulation ${
                 isSelectedByUser
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } ${isSelecting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart
-                className={`w-3 h-3 ${isSelectedByUser ? 'fill-current' : ''}`}
-              />
-              {isSelectedByUser ? 'Selected' : 'Select'}
+              {isSelectedByUser ? (
+                <Check className="w-4 h-4 stroke-[2.5]" />
+              ) : (
+                <Heart className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">{isSelectedByUser ? 'Selected' : 'Select'}</span>
             </button>
           )}
 
-          {/* Selection count */}
+          {/* Selection count - more prominent on mobile */}
           {selectionCount > 0 && (
-            <span className="text-xs text-gray-500">
-              {selectionCount} selection{selectionCount !== 1 ? 's' : ''}
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              {selectionCount}
             </span>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons - larger touch targets */}
           <div className="flex items-center gap-1">
             {/* Download button */}
             <button
               onClick={handleDownload}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors touch-manipulation"
               title="Download"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5" />
             </button>
 
             {/* Delete button */}
             {canManage && onDelete && (
               <button
                 onClick={handleDelete}
-                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                className="p-2 text-gray-400 hover:text-red-600 transition-colors touch-manipulation"
                 title="Delete"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-5 h-5" />
               </button>
             )}
           </div>

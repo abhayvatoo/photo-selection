@@ -53,7 +53,7 @@ export default function PhotoGallery({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set());
+  // Removed selectedPhotos state - now derived from photos data
   const [selectingPhoto, setSelectingPhoto] = useState<number | null>(null);
   const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -98,28 +98,41 @@ export default function PhotoGallery({
     [userRole]
   );
 
-  // Filter photos by selection status
-  const filteredPhotos = useMemo(() => {
-    let filtered = photos;
+  // Check if user can select photos - only USER role and SUPER_ADMIN
+  const canUserSelect = useMemo(
+    () => canSelect && (userRole === 'USER' || userRole === 'SUPER_ADMIN'),
+    [canSelect, userRole]
+  );
 
-    // Apply selection filter
+  // Filter photos by selection status - optimized with proper dependencies
+  const filteredPhotos = useMemo(() => {
+    if (!session?.user?.id) return photos;
+    
     if (filterBy === 'selected') {
-      filtered = filtered.filter((photo) =>
+      return photos.filter((photo) =>
         photo.selections.some(
-          (selection) => selection.userId === session?.user?.id
+          (selection) => selection.userId === session.user.id
         )
       );
     } else if (filterBy === 'unselected') {
-      filtered = filtered.filter(
+      return photos.filter(
         (photo) =>
           !photo.selections.some(
-            (selection) => selection.userId === session?.user?.id
+            (selection) => selection.userId === session.user.id
           )
       );
     }
 
-    return filtered;
+    return photos;
   }, [photos, filterBy, session?.user?.id]);
+
+  // Get currently selected photos by this user
+  const selectedPhotosByUser = useMemo(() => 
+    photos.filter(photo => 
+      photo.selections.some(s => s.userId === session?.user?.id)
+    ).map(p => p.id),
+    [photos, session?.user?.id]
+  );
 
   /**
    * Fetches photos for the workspace with pagination support
@@ -181,21 +194,29 @@ export default function PhotoGallery({
     fetchPhotos();
   }, [fetchPhotos]);
 
-  // Infinite scroll
+  // Infinite scroll with throttling for better performance
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >=
-        document.documentElement.offsetHeight - 1000 // Load when 1000px from bottom
-      ) {
-        if (pagination.hasNextPage && !loadingMore && !loading) {
-          loadMorePhotos();
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (
+          window.innerHeight + document.documentElement.scrollTop >=
+          document.documentElement.offsetHeight - 800 // Load when 800px from bottom
+        ) {
+          if (pagination.hasNextPage && !loadingMore && !loading) {
+            loadMorePhotos();
+          }
         }
-      }
+      }, 100); // Throttle to 100ms
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [loadMorePhotos, pagination.hasNextPage, loadingMore, loading]);
 
   // Socket.io event listeners for real-time updates
@@ -238,22 +259,11 @@ export default function PhotoGallery({
         })
       );
 
-      // Update selectedPhotos state if it's the current user
-      if (selectingUserId === session?.user?.id) {
-        setSelectedPhotos((prev) => {
-          const newSet = new Set(prev);
-          if (selected) {
-            newSet.add(parseInt(photoId));
-          } else {
-            newSet.delete(parseInt(photoId));
-          }
-          return newSet;
-        });
-      }
+      // No need to manage selectedPhotos state separately - it's derived from photos data
     });
 
     // Listen for photo upload notifications
-    socket.on('photoUploaded', (data) => {
+    socket.on('photoUploaded', () => {
       // Refresh photos when new ones are uploaded
       fetchPhotos(1, false);
     });
@@ -265,22 +275,15 @@ export default function PhotoGallery({
     };
   }, [socket, session?.user?.id, fetchPhotos]);
 
-  const togglePhotoSelection = async (photoId: number) => {
-    if (!canSelect || selectingPhoto === photoId) return;
+  const togglePhotoSelection = useCallback(async (photoId: number) => {
+    if (!canUserSelect || selectingPhoto === photoId || !session?.user?.id) return;
 
     setSelectingPhoto(photoId);
-    const isSelected = selectedPhotos.has(photoId);
+    const isCurrentlySelected = photos.find(p => p.id === photoId)?.selections
+      .some(s => s.userId === session.user.id) || false;
 
     try {
-      // Emit socket event for real-time updates
-      if (socket && session?.user?.id) {
-        socket.emit('selectPhoto', {
-          photoId: photoId.toString(),
-          userId: session.user.id,
-        });
-      }
-
-      const response = isSelected
+      const response = isCurrentlySelected
         ? await csrfDelete(`/api/photos/${photoId}/select`)
         : await csrfPostJSON(`/api/photos/${photoId}/select`, {});
 
@@ -288,37 +291,86 @@ export default function PhotoGallery({
         throw new Error('Failed to update selection');
       }
 
-      // Update local state
-      const newSelected = new Set(selectedPhotos);
-      if (isSelected) {
-        newSelected.delete(photoId);
-      } else {
-        newSelected.add(photoId);
+      // The socket will handle real-time updates, but we also update locally for immediate feedback
+      setPhotos(prevPhotos =>
+        prevPhotos.map(photo => {
+          if (photo.id === photoId) {
+            const newSelections = isCurrentlySelected
+              ? photo.selections.filter(s => s.userId !== session.user.id)
+              : [...photo.selections, {
+                  id: `temp-${Date.now()}`,
+                  userId: session.user.id,
+                  user: {
+                    name: session.user.name || null,
+                    email: session.user.email || ''
+                  }
+                }];
+            return { ...photo, selections: newSelections };
+          }
+          return photo;
+        })
+      );
+
+      // Emit socket event for other users
+      if (socket) {
+        socket.emit('selectPhoto', {
+          photoId: photoId.toString(),
+          userId: session.user.id,
+        });
       }
-      setSelectedPhotos(newSelected);
+
     } catch (err) {
       console.error('Selection error:', err);
-      // Could add toast notification here
+      showToast('Failed to update photo selection', 'error');
     } finally {
       setSelectingPhoto(null);
     }
+  }, [canUserSelect, selectingPhoto, session?.user, photos, socket, showToast]);
+
+  const selectAllPhotos = async () => {
+    if (!canUserSelect || !session?.user?.id) return;
+    
+    const unselectedPhotos = photos.filter(photo => 
+      !photo.selections.some(s => s.userId === session.user.id)
+    );
+    
+    for (const photo of unselectedPhotos) {
+      try {
+        await csrfPostJSON(`/api/photos/${photo.id}/select`, {});
+      } catch (err) {
+        console.error('Error selecting photo:', err);
+      }
+    }
+    
+    // Refresh photos
+    fetchPhotos(1, false);
   };
 
-  const selectAllPhotos = () => {
-    const allPhotoIds = new Set(photos.map((photo) => photo.id));
-    setSelectedPhotos(allPhotoIds);
-  };
-
-  const deselectAllPhotos = () => {
-    setSelectedPhotos(new Set());
+  const deselectAllPhotos = async () => {
+    if (!canUserSelect || !session?.user?.id) return;
+    
+    const selectedPhotos = photos.filter(photo => 
+      photo.selections.some(s => s.userId === session.user.id)
+    );
+    
+    for (const photo of selectedPhotos) {
+      try {
+        await csrfDelete(`/api/photos/${photo.id}/select`);
+      } catch (err) {
+        console.error('Error deselecting photo:', err);
+      }
+    }
+    
+    // Refresh photos
+    fetchPhotos(1, false);
   };
 
   const downloadSelectedPhotos = async () => {
-    if (selectedPhotos.size === 0) return;
+    if (selectedPhotosByUser.length === 0) return;
 
     try {
       const response = await csrfPostJSON('/api/photos/download', {
-        photoIds: Array.from(selectedPhotos),
+        photoIds: selectedPhotosByUser,
       });
 
       if (!response.ok) {
@@ -337,6 +389,7 @@ export default function PhotoGallery({
       document.body.removeChild(a);
     } catch (err) {
       console.error('Download error:', err);
+      showToast('Failed to download photos', 'error');
     }
   };
 
@@ -401,65 +454,7 @@ export default function PhotoGallery({
     }
   }, []);
 
-  /**
-   * Handles photo selection for regular users
-   */
-  const handlePhotoSelect = useCallback(
-    async (photoId: number) => {
-      if (!canSelect || isSelecting) return;
-
-      setIsSelecting(true);
-      try {
-        const response = await csrfPostJSON(
-          `/api/photos/${photoId}/select`,
-          {}
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to select photo');
-        }
-
-        // Update local state - the socket will handle real-time updates
-        setPhotos((prevPhotos) =>
-          prevPhotos.map((photo) =>
-            photo.id === photoId
-              ? {
-                  ...photo,
-                  selections: photo.selections.some(
-                    (s) => s.userId === session?.user?.id
-                  )
-                    ? photo.selections.filter(
-                        (s) => s.userId !== session?.user?.id
-                      )
-                    : [
-                        ...photo.selections,
-                        {
-                          id: `temp-${Date.now()}`,
-                          userId: session?.user?.id || '',
-                          user: {
-                            name: session?.user?.name || null,
-                            email: session?.user?.email || '',
-                          },
-                        },
-                      ],
-                }
-              : photo
-          )
-        );
-      } catch (err) {
-        console.error('Error selecting photo:', err);
-      } finally {
-        setIsSelecting(false);
-      }
-    },
-    [
-      canSelect,
-      isSelecting,
-      session?.user?.id,
-      session?.user?.name,
-      session?.user?.email,
-    ]
-  );
+  // Remove duplicate handlePhotoSelect - we'll use togglePhotoSelection for everything
 
   if (loading) {
     return (
@@ -475,7 +470,7 @@ export default function PhotoGallery({
       <div className="text-center py-12">
         <div className="text-red-500 mb-4">⚠️ {error}</div>
         <button
-          onClick={fetchPhotos}
+          onClick={() => fetchPhotos()}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           Try Again
@@ -501,7 +496,7 @@ export default function PhotoGallery({
     return (
       <div className="space-y-4">
         {/* Filter Bar */}
-        {canSelect && (
+        {canUserSelect && (
           <div className="flex justify-end">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-400" />
@@ -538,7 +533,7 @@ export default function PhotoGallery({
   return (
     <div className="space-y-4">
       {/* Filter Bar */}
-      {photos.length > 0 && canSelect && (
+      {photos.length > 0 && canUserSelect && (
         <div className="flex justify-end">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
@@ -563,13 +558,13 @@ export default function PhotoGallery({
           ) : (
             <>
               {filteredPhotos.length} of {pagination.total} photos
-              {selectedPhotos.size > 0 && ` • ${selectedPhotos.size} selected`}
+              {selectedPhotosByUser.length > 0 && ` • ${selectedPhotosByUser.length} selected`}
             </>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          {canSelect && photos.length > 0 && (
+          {canUserSelect && photos.length > 0 && (
             <>
               <button
                 onClick={selectAllPhotos}
@@ -577,7 +572,7 @@ export default function PhotoGallery({
               >
                 Select All
               </button>
-              {selectedPhotos.size > 0 && (
+              {selectedPhotosByUser.length > 0 && (
                 <button
                   onClick={deselectAllPhotos}
                   className="text-sm text-gray-600 hover:text-gray-700 px-2 py-1 rounded"
@@ -588,7 +583,7 @@ export default function PhotoGallery({
             </>
           )}
 
-          {canSelect && selectedPhotos.size > 0 && (
+          {canUserSelect && selectedPhotosByUser.length > 0 && (
             <button
               onClick={downloadSelectedPhotos}
               className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
@@ -600,16 +595,16 @@ export default function PhotoGallery({
         </div>
       </div>
 
-      {/* Photo Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {/* Photo Grid - Optimized for mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
         {filteredPhotos.map((photo) => (
           <PhotoCard
             key={photo.id}
             photo={photo}
             userId={userId}
-            canSelect={canSelect}
+            canSelect={canUserSelect}
             canManage={canManage}
-            isSelected={selectedPhotos.has(photo.id)}
+            isSelected={photo.selections.some(s => s.userId === userId)}
             isSelecting={selectingPhoto === photo.id}
             onSelect={togglePhotoSelection}
             onPreview={handlePhotoPreview}
@@ -653,19 +648,19 @@ export default function PhotoGallery({
         photo={previewPhoto}
         isOpen={isPreviewOpen}
         userId={userId}
-        canSelect={canSelect}
+        canSelect={canUserSelect}
         isSelecting={selectingPhoto === previewPhoto?.id}
         onClose={handleClosePreview}
-        onSelect={handlePhotoSelect}
+        onSelect={togglePhotoSelection}
         onDownload={handlePhotoDownload}
       />
 
       {/* Selection summary for clients */}
-      {canSelect && userRole === 'USER' && selectedPhotos.size > 0 && (
+      {canUserSelect && userRole === 'USER' && selectedPhotosByUser.length > 0 && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <div className="text-green-800 font-medium">
-            ✨ You&apos;ve selected {selectedPhotos.size} photo
-            {selectedPhotos.size !== 1 ? 's' : ''}
+            ✨ You&apos;ve selected {selectedPhotosByUser.length} photo
+            {selectedPhotosByUser.length !== 1 ? 's' : ''}
           </div>
           <div className="text-green-600 text-sm mt-1">
             Your photographer will be notified of your selections

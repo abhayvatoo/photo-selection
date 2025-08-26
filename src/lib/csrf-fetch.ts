@@ -57,7 +57,7 @@ export async function csrfFetch(
     if (body instanceof FormData) {
       // Clone FormData and add token
       const newFormData = new FormData();
-      for (const [key, value] of body.entries()) {
+      for (const [key, value] of Array.from(body.entries())) {
         newFormData.append(key, value);
       }
       newFormData.append('csrfToken', token);
