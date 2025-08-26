@@ -1,13 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Plus, X, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
-import { csrfPostJSON } from '@/lib/csrf-fetch';
+import {
+  checkWorkspaceLimit,
+  createWorkspace,
+} from '@/lib/actions/workspace-actions';
+import { useRouter } from 'next/navigation';
 
 export function CreateWorkspaceButton() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [limitCheck, setLimitCheck] = useState<{
@@ -22,58 +27,40 @@ export function CreateWorkspaceButton() {
   });
   const { showToast } = useToast();
 
-  const checkLimit = useCallback(async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      const response = await fetch('/api/user/workspace-limit');
-      if (response.ok) {
-        const data = await response.json();
-        setLimitCheck(data);
-      }
-    } catch (error) {
-      console.error('Error checking workspace limit:', error);
-    }
-  }, [session?.user?.id]);
-
+  // Check workspace limit when modal opens
   useEffect(() => {
     if (session?.user?.id && showModal) {
-      checkLimit();
+      checkWorkspaceLimit()
+        .then(setLimitCheck)
+        .catch((error) => {
+          console.error('Error checking workspace limit:', error);
+          showToast('Failed to check workspace limit', 'error');
+        });
     }
-  }, [session?.user?.id, showModal, checkLimit]);
+  }, [session?.user?.id, showModal, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await csrfPostJSON('/api/admin/workspaces', formData);
+      const result = await createWorkspace(formData);
 
-      if (response.ok) {
-        const result = await response.json();
-
-        // Show success notification
-        showToast(
-          `Workspace "${result.workspace.name}" created successfully! You can access it at: /workspace/${result.workspace.slug}`,
-          'success'
-        );
-
-        setShowModal(false);
-        setFormData({ name: '', slug: '', description: '' });
-        // Refresh the page to show new workspace
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        console.error('❌ CreateWorkspaceButton: API error:', error);
-        showToast(
-          `Failed to create workspace: ${error.error || error.message || 'Unknown error'}`,
-          'error'
-        );
-      }
-    } catch (error) {
-      console.error('❌ CreateWorkspaceButton: Network/parsing error:', error);
+      // Show success notification
       showToast(
-        `Failed to create workspace: ${error instanceof Error ? error.message : 'Network error'}`,
+        `Workspace "${result.workspace.name}" created successfully!`,
+        'success'
+      );
+
+      setShowModal(false);
+      setFormData({ name: '', slug: '', description: '' });
+
+      // Navigate to the new workspace
+      router.push(`/workspace/${result.workspace.slug}`);
+    } catch (error) {
+      console.error('❌ CreateWorkspaceButton: Error:', error);
+      showToast(
+        `Failed to create workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'error'
       );
     } finally {
@@ -131,7 +118,8 @@ export function CreateWorkspaceButton() {
                       Workspace Limit Reached
                     </p>
                     <p className="text-sm text-orange-700 mt-1">
-                      You&apos;ve reached your limit of {limitCheck.limit} workspace
+                      You&apos;ve reached your limit of {limitCheck.limit}{' '}
+                      workspace
                       {limitCheck.limit === 1 ? '' : 's'}.
                       <a
                         href="/pricing"

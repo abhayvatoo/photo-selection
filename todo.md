@@ -9,3 +9,4 @@ list of things need to be implemented or improved:
 - fix 64 of 44 photos - loading more photos than total
 - improve photo cards ux
 - no api calls in use effect
+- server functions vs server components

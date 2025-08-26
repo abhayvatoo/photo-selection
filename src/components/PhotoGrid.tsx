@@ -86,12 +86,12 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
           </h3>
         </div>
         <p className="text-blue-700 mb-4">
-          To select photos, please choose your identity from the &quot;Select Your
-          Identity&quot; section above.
+          To select photos, please choose your identity from the &quot;Select
+          Your Identity&quot; section above.
         </p>
         <p className="text-sm text-blue-600">
-          Once selected, you&apos;ll see select buttons on each photo to mark your
-          choices.
+          Once selected, you&apos;ll see select buttons on each photo to mark
+          your choices.
         </p>
       </div>
     );

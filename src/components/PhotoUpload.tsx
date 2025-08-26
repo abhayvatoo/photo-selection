@@ -201,8 +201,8 @@ export default function PhotoUpload({
                 Photo Limit Reached
               </p>
               <p className="text-sm text-orange-700 mt-1">
-                You&apos;ve reached your limit of {photoLimit.limit} photos in this
-                workspace.
+                You&apos;ve reached your limit of {photoLimit.limit} photos in
+                this workspace.
                 <a
                   href="/pricing"
                   className="underline hover:no-underline ml-1"
