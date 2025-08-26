@@ -32,11 +32,9 @@ interface PhotoCardProps {
   userId: string;
   canSelect: boolean;
   canManage: boolean;
-  managementMode: boolean;
   isSelected: boolean;
   isSelecting: boolean;
   onSelect: (photoId: number) => void;
-  onToggleSelection: (photoId: number) => void;
   onPreview: (photo: Photo) => void;
   onDownload: (photo: Photo) => void;
   onDelete?: (photoId: number) => void;
@@ -51,11 +49,9 @@ const PhotoCard = memo(function PhotoCard({
   userId,
   canSelect,
   canManage,
-  managementMode,
   isSelected,
   isSelecting,
   onSelect,
-  onToggleSelection,
   onPreview,
   onDownload,
   onDelete,
@@ -72,16 +68,6 @@ const PhotoCard = memo(function PhotoCard({
     onSelect(photo.id);
   }, [canSelect, isSelecting, onSelect, photo.id]);
 
-  /**
-   * Handles management mode selection toggle
-   */
-  const handleToggleSelection = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      e.stopPropagation();
-      onToggleSelection(photo.id);
-    },
-    [onToggleSelection, photo.id]
-  );
 
   /**
    * Handles photo preview
@@ -108,17 +94,6 @@ const PhotoCard = memo(function PhotoCard({
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-      {/* Management Mode Checkbox */}
-      {managementMode && canManage && (
-        <div className="absolute top-2 left-2 z-20">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={handleToggleSelection}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-          />
-        </div>
-      )}
 
       {/* Photo Image */}
       <div
@@ -154,7 +129,7 @@ const PhotoCard = memo(function PhotoCard({
         {/* Actions */}
         <div className="flex items-center justify-between">
           {/* Selection button */}
-          {canSelect && !managementMode && (
+          {canSelect && (
             <button
               onClick={handleSelect}
               disabled={isSelecting}
@@ -189,8 +164,8 @@ const PhotoCard = memo(function PhotoCard({
               <Download className="w-4 h-4" />
             </button>
 
-            {/* Delete button (management mode only) */}
-            {managementMode && canManage && onDelete && (
+            {/* Delete button */}
+            {canManage && onDelete && (
               <button
                 onClick={handleDelete}
                 className="p-1 text-gray-400 hover:text-red-600 transition-colors"

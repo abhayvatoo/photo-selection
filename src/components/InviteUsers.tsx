@@ -124,28 +124,18 @@ export default function InviteUsers({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Users</h3>
-
+    <div>
       {/* User Limit Warning */}
       {userLimit && !userLimit.allowed && (
         <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
           <div className="flex items-start">
-            <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-orange-800">
-                User Limit Reached
-              </p>
-              <p className="text-sm text-orange-700 mt-1">
-                You've reached your limit of {userLimit.limit} users in this
-                workspace.
-                <a
-                  href="/pricing"
-                  className="underline hover:no-underline ml-1"
-                >
-                  Upgrade your plan
-                </a>{' '}
-                to invite more users.
+                User limit reached ({userLimit.limit} users).
+                <a href="/pricing" className="underline hover:no-underline ml-1">
+                  Upgrade plan
+                </a>
               </p>
             </div>
           </div>
@@ -154,46 +144,26 @@ export default function InviteUsers({
 
       {/* User Usage Info */}
       {userLimit && userLimit.allowed && userLimit.limit !== -1 && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-700">
-            <span className="font-medium">
-              {userLimit.current} of {userLimit.limit} users in this workspace
-            </span>
-          </p>
+        <div className="mb-3 text-xs text-gray-600">
+          {userLimit.current}/{userLimit.limit} users
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Email Address
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             type="email"
-            id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="user@example.com"
+            disabled={userLimit ? !userLimit.allowed : false}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            placeholder="Email address"
           />
-        </div>
-
-        <div>
-          <label
-            htmlFor="role"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Role
-          </label>
           <select
-            id="role"
             value={role}
             onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           >
             {availableRoles().map((roleOption) => (
               <option key={roleOption.value} value={roleOption.value}>
@@ -203,39 +173,28 @@ export default function InviteUsers({
           </select>
         </div>
 
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading || !email || (userLimit ? !userLimit.allowed : false)}
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {loading ? 'Sending...' : 'Send Invite'}
+          </button>
+        </div>
+
         {message && (
           <div
-            className={`p-3 rounded-md ${
+            className={`p-2 rounded-md text-sm ${
               message.type === 'success'
                 ? 'bg-green-50 text-green-800 border border-green-200'
                 : 'bg-red-50 text-red-800 border border-red-200'
             }`}
           >
-            <p className="text-sm">{message.text}</p>
+            {message.text}
           </div>
         )}
-
-        <button
-          type="submit"
-          disabled={loading || !email}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Sending Invitation...' : 'Send Invitation'}
-        </button>
       </form>
-
-      <div className="mt-6 p-4 bg-gray-50 rounded-md">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">
-          How it works:
-        </h4>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• User receives a secure invitation link via email</li>
-          <li>• They sign in with their email (magic link)</li>
-          <li>• Upon accepting, their role is automatically assigned</li>
-          <li>• Staff and Clients are assigned to your workspace</li>
-          <li>• Invitations expire after 72 hours</li>
-        </ul>
-      </div>
     </div>
   );
 }

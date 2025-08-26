@@ -4,8 +4,6 @@ import { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import {
   Upload,
-  Plus,
-  CheckCircle,
   AlertCircle,
   AlertTriangle,
 } from 'lucide-react';
@@ -31,6 +29,7 @@ export default function PhotoUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({
     current: 0,
     total: 0,
@@ -166,6 +165,31 @@ export default function PhotoUpload({
     fileInputRef.current?.click();
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      // Create a mock event to reuse the handleFileSelect logic
+      const mockEvent = {
+        target: { files }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      handleFileSelect(mockEvent);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Photo Limit Warning */}
@@ -205,58 +229,63 @@ export default function PhotoUpload({
         </div>
       )}
 
-      <button
+      <div
         onClick={handleClick}
-        disabled={
-          isUploading ||
-          !session?.user ||
-          (photoLimit ? !photoLimit.allowed : false)
-        }
-        className={`w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`w-full border-2 border-dashed rounded-lg p-4 text-center transition-colors duration-200 cursor-pointer ${
           isUploading
             ? 'border-blue-300 bg-blue-50 cursor-not-allowed'
             : error
               ? 'border-red-300 bg-red-50 hover:border-red-400'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-        }`}
+              : isDragOver
+                ? 'border-blue-500 bg-blue-100'
+                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+        } ${(photoLimit && !photoLimit.allowed) ? 'opacity-50 cursor-not-allowed' : ''}`}
+        style={{ pointerEvents: (isUploading || !session?.user || (photoLimit && !photoLimit.allowed)) ? 'none' : 'auto' }}
       >
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center justify-center gap-3">
           {isUploading ? (
             <>
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-blue-600 font-medium">
-                Uploading photos... ({uploadProgress.current}/
-                {uploadProgress.total})
-              </p>
-              <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
-                  }}
-                />
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div className="flex flex-col text-left">
+                <p className="text-blue-600 font-medium text-sm">
+                  Uploading... ({uploadProgress.current}/{uploadProgress.total})
+                </p>
+                <div className="w-32 bg-gray-200 rounded-full h-1 mt-1">
+                  <div
+                    className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
               </div>
             </>
           ) : error ? (
             <>
-              <AlertCircle className="w-8 h-8 text-red-500" />
-              <p className="text-red-600 font-medium">Upload failed</p>
-              <p className="text-sm text-red-600">{error}</p>
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <div className="text-left">
+                <p className="text-red-600 font-medium text-sm">Upload failed</p>
+                <p className="text-xs text-red-600">{error}</p>
+              </div>
             </>
           ) : (
             <>
-              <Plus className="w-8 h-8 text-gray-400" />
-              <p className="text-gray-600 font-medium">
-                Click to upload photos
-              </p>
-              <p className="text-sm text-gray-500">
-                Supports JPG, PNG, and other image formats • Multiple files
-                allowed
-              </p>
+              <Upload className={`w-5 h-5 ${isDragOver ? 'text-blue-600' : 'text-gray-400'}`} />
+              <div className="text-left">
+                <p className={`font-medium text-sm ${isDragOver ? 'text-blue-700' : 'text-gray-700'}`}>
+                  {isDragOver ? 'Drop Photos Here' : 'Upload Photos'}
+                </p>
+                <p className={`text-xs ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`}>
+                  {isDragOver ? 'Release to upload' : 'JPG, PNG • Multiple files • Drag & drop'}
+                </p>
+              </div>
             </>
           )}
         </div>
-      </button>
+      </div>
 
       {error && (
         <button

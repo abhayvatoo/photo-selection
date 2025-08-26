@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import {
-  MoreVertical,
-  Edit,
   Settings,
+  Edit,
+  Upload,
+  UserPlus,
   Archive,
   Copy,
   Trash2,
-  UserPlus,
-  Upload,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -28,12 +27,12 @@ interface Workspace {
   status: string;
 }
 
-interface WorkspaceMenuProps {
+interface WorkspaceSettingsProps {
   workspace: Workspace;
   userRole: string;
 }
 
-export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
+export function WorkspaceSettings({ workspace, userRole }: WorkspaceSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -46,54 +45,28 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const hasAdminPermissions = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+
+  if (!hasAdminPermissions) {
+    return null;
+  }
+
   const handleEditWorkspace = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to edit this workspace. Only super admins and business owners can edit workspaces.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
     setShowEditModal(true);
     setIsOpen(false);
   };
 
-  const handleInviteMembers = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to invite members. Only super admins and business owners can invite workspace members.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
-    setShowInviteModal(true);
-    setIsOpen(false);
-  };
-
   const handleUploadPhotos = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to upload photos. Only super admins and business owners can upload photos.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
     setShowUploadModal(true);
     setIsOpen(false);
   };
 
+  const handleInviteMembers = () => {
+    setShowInviteModal(true);
+    setIsOpen(false);
+  };
+
   const handleChangeStatus = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to change workspace status. Only super admins and business owners can manage workspace status.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
     setShowStatusModal(true);
     setIsOpen(false);
   };
@@ -130,14 +103,6 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
   };
 
   const handleDuplicateWorkspace = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to duplicate workspaces. Only super admins and business owners can duplicate workspaces.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
     setShowDuplicateModal(true);
     setIsOpen(false);
   };
@@ -170,14 +135,6 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
   };
 
   const handleDeleteWorkspace = () => {
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'BUSINESS_OWNER') {
-      showToast(
-        'You do not have permission to delete workspaces. Only super admins and business owners can delete workspaces.',
-        'error'
-      );
-      setIsOpen(false);
-      return;
-    }
     setShowDeleteModal(true);
     setIsOpen(false);
   };
@@ -192,7 +149,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           `Workspace "${workspace.name}" has been deleted successfully.`,
           'success'
         );
-        router.push('/dashboard'); // Redirect to dashboard after deletion
+        router.push('/workspaces'); // Redirect to workspaces list after deletion
       } else {
         const error = await response.json();
         showToast(
@@ -238,33 +195,24 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
     }
   };
 
-  const hasAdminPermissions = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
-
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+        title="Workspace Settings"
       >
-        <MoreVertical className="h-5 w-5" />
+        <Settings className="h-4 w-4" />
+        <span className="hidden sm:inline">Settings</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+        <div className="absolute right-0 top-12 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
           {/* Edit Workspace */}
           <button
             onClick={handleEditWorkspace}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-gray-700 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? 'Edit workspace details'
-                : 'Only super admins and business owners can edit workspaces'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-gray-700 hover:bg-gray-50"
           >
             <Edit className="h-4 w-4" />
             <span>Edit Workspace</span>
@@ -273,16 +221,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           {/* Upload Photos */}
           <button
             onClick={handleUploadPhotos}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-gray-700 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? 'Upload photos to workspace'
-                : 'Only super admins and business owners can upload photos'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-gray-700 hover:bg-gray-50"
           >
             <Upload className="h-4 w-4" />
             <span>Upload Photos</span>
@@ -291,16 +230,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           {/* Invite Members */}
           <button
             onClick={handleInviteMembers}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-gray-700 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? 'Invite new members to workspace'
-                : 'Only super admins and business owners can invite members'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-gray-700 hover:bg-gray-50"
           >
             <UserPlus className="h-4 w-4" />
             <span>Invite Members</span>
@@ -311,16 +241,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           {/* Change Status */}
           <button
             onClick={handleChangeStatus}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-gray-700 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? `${workspace.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} workspace`
-                : 'Only super admins and business owners can change workspace status'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-gray-700 hover:bg-gray-50"
           >
             <Archive className="h-4 w-4" />
             <span>
@@ -332,16 +253,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           {/* Duplicate Workspace */}
           <button
             onClick={handleDuplicateWorkspace}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-gray-700 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? 'Create a copy of this workspace'
-                : 'Only super admins and business owners can duplicate workspaces'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-gray-700 hover:bg-gray-50"
           >
             <Copy className="h-4 w-4" />
             <span>Duplicate Workspace</span>
@@ -352,16 +264,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
           {/* Delete Workspace */}
           <button
             onClick={handleDeleteWorkspace}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 ${
-              hasAdminPermissions
-                ? 'text-red-600 hover:bg-red-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-            title={
-              hasAdminPermissions
-                ? 'Permanently delete this workspace'
-                : 'Only super admins and business owners can delete workspaces'
-            }
+            className="w-full px-4 py-2 text-left text-sm flex items-center space-x-3 text-red-600 hover:bg-red-50"
           >
             <Trash2 className="h-4 w-4" />
             <span>Delete Workspace</span>
@@ -369,7 +272,7 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
         </div>
       )}
 
-      {/* Status Change Confirmation Modal */}
+      {/* Modals */}
       <ConfirmationModal
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
@@ -389,7 +292,6 @@ ${
         loading={loading}
       />
 
-      {/* Duplicate Workspace Modal */}
       <DuplicateWorkspaceModal
         isOpen={showDuplicateModal}
         onClose={() => setShowDuplicateModal(false)}
@@ -399,7 +301,6 @@ ${
         loading={loading}
       />
 
-      {/* Delete Workspace Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -421,7 +322,6 @@ This workspace and its data will be completely removed from the system.`}
         loading={loading}
       />
 
-      {/* Edit Workspace Modal */}
       <EditWorkspaceModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -430,7 +330,6 @@ This workspace and its data will be completely removed from the system.`}
         loading={loading}
       />
 
-      {/* Invite Members Modal */}
       <InviteModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
@@ -439,7 +338,6 @@ This workspace and its data will be completely removed from the system.`}
         workspaceName={workspace.name}
       />
 
-      {/* Upload Photos Modal */}
       <UploadModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}

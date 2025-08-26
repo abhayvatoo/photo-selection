@@ -4,11 +4,6 @@ import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
 import {
   ArrowLeft,
-  Upload,
-  Download,
-  Eye,
-  Heart,
-  Camera,
   Users,
   Calendar,
 } from 'lucide-react';
@@ -16,8 +11,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import PhotoGallery from '@/components/PhotoGallery';
-import PhotoUpload from '@/components/PhotoUpload';
-import InviteUsers from '@/components/InviteUsers';
+import { WorkspaceSettings } from '@/components/WorkspaceSettings';
 
 interface WorkspacePageProps {
   params: {
@@ -76,12 +70,12 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
           <p className="text-gray-600 mb-6">Workspace not found</p>
-          <a
+          <Link
             href="/"
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
             Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -101,135 +95,108 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0 flex-1">
                 <Link
                   href="/workspaces"
                   className="flex items-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors mr-4"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Back to Workspaces</span>
+                  <span className="font-medium hidden sm:inline">Back to Workspaces</span>
+                  <span className="font-medium sm:hidden">Back</span>
                 </Link>
                 <div className="w-px h-6 bg-gray-300 mr-4"></div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
                   {workspace.name}
                 </h1>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">/{workspace.slug}</span>
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                {/* Mobile Settings */}
+                <div className="sm:hidden">
+                  <WorkspaceSettings
+                    workspace={workspace}
+                    userRole={userRole}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Workspace Info */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          {/* Workspace Info - Compact */}
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">
                   {workspace.name}
                 </h2>
                 {workspace.description && (
-                  <p className="text-gray-600 mb-4">{workspace.description}</p>
+                  <p className="text-gray-600 text-sm mb-2">{workspace.description}</p>
                 )}
-                <div className="flex items-center space-x-6 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                   <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-1" />
+                    <Users className="h-3 w-3 mr-1" />
                     {workspace.users.length} members
                   </div>
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Created {new Date(workspace.createdAt).toLocaleDateString()}
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {new Date(workspace.createdAt).toLocaleDateString()}
                   </div>
+                </div>
+              </div>
+              
+              {/* Quick stats and settings for larger screens */}
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:block text-right">
+                  <div className="text-sm font-medium text-gray-900">
+                    {workspace.photos.length} Photos
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {workspace.photos.reduce((acc, photo) => acc + photo.selections.length, 0)} Selections
+                  </div>
+                </div>
+                
+                {/* Desktop Settings */}
+                <div className="hidden sm:block">
+                  <WorkspaceSettings
+                    workspace={workspace}
+                    userRole={userRole}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Photo Upload Section - Only for BUSINESS_OWNER and SUPER_ADMIN */}
-          {canUpload && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Upload Photos
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Add new photos to this workspace for clients to view and select.
-              </p>
-              <PhotoUpload workspaceId={workspace.id} />
-            </div>
-          )}
 
-          {/* Invite Users Section - Only for BUSINESS_OWNER and SUPER_ADMIN */}
-          {canUpload && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <InviteUsers
-                userRole={userRole as any}
+          {/* Photos Section - Main Focus */}
+          <div className="bg-white rounded-lg shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h3 className="text-lg font-semibold text-gray-900">Photos</h3>
+                <div className="text-xs sm:text-sm text-gray-500">
+                  {userRole === 'USER'
+                    ? 'Click the heart to select your favorites'
+                    : userRole === 'BUSINESS_OWNER'
+                      ? 'View client selections & manage photos'
+                      : 'Browse workspace photos'}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <PhotoGallery
                 workspaceId={workspace.id}
+                userId={session.user.id}
+                userRole={userRole}
+                canSelect={
+                  userRole === 'USER' ||
+                  userRole === 'STAFF' ||
+                  userRole === 'BUSINESS_OWNER' ||
+                  userRole === 'SUPER_ADMIN'
+                }
               />
             </div>
-          )}
-
-          {/* Photos Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Photos</h3>
-              <div className="text-sm text-gray-500">
-                {userRole === 'USER'
-                  ? 'Select your favorites by clicking the heart icon'
-                  : userRole === 'BUSINESS_OWNER'
-                    ? 'View client selections and manage photos'
-                    : 'Browse workspace photos'}
-              </div>
-            </div>
-
-            <PhotoGallery
-              workspaceId={workspace.id}
-              userId={session.user.id}
-              userRole={userRole}
-              canSelect={
-                userRole === 'USER' ||
-                userRole === 'STAFF' ||
-                userRole === 'BUSINESS_OWNER' ||
-                userRole === 'SUPER_ADMIN'
-              }
-            />
           </div>
 
-          {/* Team Members (for admins) */}
-          {canManage && (
-            <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Team Members
-              </h3>
-              <div className="space-y-4">
-                {workspace.users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {user.name || user.email}
-                      </p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        user.role === 'SUPER_ADMIN'
-                          ? 'bg-purple-100 text-purple-800'
-                          : user.role === 'BUSINESS_OWNER'
-                            ? 'bg-blue-100 text-blue-800'
-                            : user.role === 'STAFF'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {user.role?.toLowerCase().replace('_', ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>{' '}
       {/* Close padding wrapper */}

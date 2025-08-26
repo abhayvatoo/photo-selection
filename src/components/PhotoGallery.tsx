@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Loader2, AlertCircle, X, Trash2, Download } from 'lucide-react';
+import { Loader2, AlertCircle, Trash2, Download, Filter } from 'lucide-react';
 import { UserRole } from '@prisma/client';
 import { io, Socket } from 'socket.io-client';
 import PhotoCard from './PhotoCard';
@@ -51,14 +51,21 @@ export default function PhotoGallery({
   const { data: session } = useSession();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set());
   const [selectingPhoto, setSelectingPhoto] = useState<number | null>(null);
-  const [managementMode, setManagementMode] = useState(false);
-  const [deletingPhotos, setDeletingPhotos] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+    hasNextPage: false,
+  });
+  const [filterBy, setFilterBy] = useState<'all' | 'selected' | 'unselected'>('all');
   const { showToast } = useToast();
 
   // Initialize Socket.io connection
@@ -89,34 +96,97 @@ export default function PhotoGallery({
     [userRole]
   );
 
+  // Filter photos by selection status
+  const filteredPhotos = useMemo(() => {
+    let filtered = photos;
+
+    // Apply selection filter
+    if (filterBy === 'selected') {
+      filtered = filtered.filter(photo =>
+        photo.selections.some(selection => selection.userId === session?.user?.id)
+      );
+    } else if (filterBy === 'unselected') {
+      filtered = filtered.filter(photo =>
+        !photo.selections.some(selection => selection.userId === session?.user?.id)
+      );
+    }
+
+    return filtered;
+  }, [photos, filterBy, session?.user?.id]);
+
   /**
-   * Fetches photos for the workspace with error handling
+   * Fetches photos for the workspace with pagination support
    */
-  const fetchPhotos = useCallback(async () => {
+  const fetchPhotos = useCallback(async (page: number = 1, append: boolean = false) => {
     try {
-      setLoading(true);
+      if (page === 1) {
+        setLoading(true);
+        setPhotos([]);
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
 
-      const response = await fetch(`/api/photos/workspace/${workspaceId}`);
+      const response = await fetch(
+        `/api/photos/workspace/${workspaceId}?page=${page}&limit=${pagination.limit}`
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch photos: ${response.status}`);
       }
 
       const data = await response.json();
-      setPhotos(data.photos || []);
+      
+      if (append && page > 1) {
+        setPhotos(prev => [...prev, ...(data.photos || [])]);
+      } else {
+        setPhotos(data.photos || []);
+      }
+
+      setPagination({
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        total: data.pagination.total,
+        pages: data.pagination.pages,
+        hasNextPage: data.pagination.page < data.pagination.pages,
+      });
     } catch (err) {
       console.error('Error fetching photos:', err);
       setError(err instanceof Error ? err.message : 'Failed to load photos');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [workspaceId]);
+  }, [workspaceId, pagination.limit]);
+
+  // Load more photos
+  const loadMorePhotos = useCallback(async () => {
+    if (pagination.hasNextPage && !loadingMore) {
+      await fetchPhotos(pagination.page + 1, true);
+    }
+  }, [fetchPhotos, pagination.hasNextPage, pagination.page, loadingMore]);
 
   // Fetch photos when workspace changes
   useEffect(() => {
     fetchPhotos();
   }, [fetchPhotos]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 // Load when 1000px from bottom
+      ) {
+        if (pagination.hasNextPage && !loadingMore && !loading) {
+          loadMorePhotos();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMorePhotos, pagination.hasNextPage, loadingMore, loading]);
 
   // Socket.io event listeners for real-time updates
   useEffect(() => {
@@ -175,7 +245,7 @@ export default function PhotoGallery({
     // Listen for photo upload notifications
     socket.on('photoUploaded', (data) => {
       // Refresh photos when new ones are uploaded
-      fetchPhotos();
+      fetchPhotos(1, false);
     });
 
     // Cleanup listeners
@@ -260,49 +330,6 @@ export default function PhotoGallery({
     }
   };
 
-  const deleteSelectedPhotos = async () => {
-    if (selectedPhotos.size === 0 || !canManage) return;
-
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedPhotos.size} selected photos? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
-    setDeletingPhotos(true);
-
-    try {
-      const response = await csrfDelete('/api/photos/bulk-delete', {
-        body: JSON.stringify({ photoIds: Array.from(selectedPhotos) })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Delete failed');
-      }
-
-      const result = await response.json();
-
-      // Remove deleted photos from local state
-      setPhotos((prevPhotos) =>
-        prevPhotos.filter((photo) => !selectedPhotos.has(photo.id))
-      );
-
-      // Clear selection
-      setSelectedPhotos(new Set());
-      setManagementMode(false);
-
-      // Show success message
-      showToast(`Successfully deleted ${result.deletedCount} photos`, 'success');
-    } catch (err) {
-      console.error('Delete error:', err);
-      showToast(err instanceof Error ? err.message : 'Failed to delete photos', 'error');
-    } finally {
-      setDeletingPhotos(false);
-    }
-  };
 
 
   const handleDeletePhoto = useCallback(
@@ -328,17 +355,6 @@ export default function PhotoGallery({
     []
   );
 
-  const handleTogglePhotoSelection = useCallback((photoId: number) => {
-    setSelectedPhotos((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(photoId)) {
-        newSet.delete(photoId);
-      } else {
-        newSet.add(photoId);
-      }
-      return newSet;
-    });
-  }, []);
 
   /**
    * Handles photo preview modal
@@ -477,39 +493,74 @@ export default function PhotoGallery({
     );
   }
 
+  if (filteredPhotos.length === 0 && photos.length > 0) {
+    return (
+      <div className="space-y-4">
+        {/* Filter Bar */}
+        {canSelect && (
+          <div className="flex justify-end">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <select
+                value={filterBy}
+                onChange={(e) => setFilterBy(e.target.value as typeof filterBy)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Photos</option>
+                <option value="selected">My Selections</option>
+                <option value="unselected">Not Selected</option>
+              </select>
+            </div>
+          </div>
+        )}
+        
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-4">🔍 No photos match your filter</div>
+          <button 
+            onClick={() => { setFilterBy('all'); }}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            Clear filter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Filter Bar */}
+      {photos.length > 0 && canSelect && (
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value as typeof filterBy)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Photos</option>
+              <option value="selected">My Selections</option>
+              <option value="unselected">Not Selected</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Header with selection info and bulk controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          {photos.length} photos • {selectedPhotos.size} selected
+          {loading ? 'Loading...' : (
+            <>
+              {filteredPhotos.length} of {pagination.total} photos
+              {selectedPhotos.size > 0 && ` • ${selectedPhotos.size} selected`}
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          {canManage && photos.length > 0 && (
-            <button
-              onClick={() => setManagementMode(!managementMode)}
-              className={`text-sm px-3 py-1 rounded ${
-                managementMode
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {managementMode ? (
-                <>
-                  <X className="h-4 w-4 inline mr-1" />
-                  Exit Management
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 inline mr-1" />
-                  Manage Photos
-                </>
-              )}
-            </button>
-          )}
 
-          {canSelect && photos.length > 0 && !managementMode && (
+          {canSelect && photos.length > 0 && (
             <>
               <button
                 onClick={selectAllPhotos}
@@ -528,20 +579,7 @@ export default function PhotoGallery({
             </>
           )}
 
-          {managementMode && selectedPhotos.size > 0 && (
-            <button
-              onClick={deleteSelectedPhotos}
-              disabled={deletingPhotos}
-              className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              {deletingPhotos
-                ? 'Deleting...'
-                : `Delete Selected (${selectedPhotos.size})`}
-            </button>
-          )}
-
-          {canSelect && selectedPhotos.size > 0 && !managementMode && (
+          {canSelect && selectedPhotos.size > 0 && (
             <button
               onClick={downloadSelectedPhotos}
               className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
@@ -555,24 +593,49 @@ export default function PhotoGallery({
 
       {/* Photo Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {photos.map((photo) => (
+        {filteredPhotos.map((photo) => (
           <PhotoCard
             key={photo.id}
             photo={photo}
             userId={userId}
             canSelect={canSelect}
             canManage={canManage}
-            managementMode={managementMode}
             isSelected={selectedPhotos.has(photo.id)}
             isSelecting={selectingPhoto === photo.id}
             onSelect={togglePhotoSelection}
-            onToggleSelection={handleTogglePhotoSelection}
             onPreview={handlePhotoPreview}
             onDownload={handlePhotoDownload}
             onDelete={canManage ? handleDeletePhoto : undefined}
           />
         ))}
       </div>
+
+      {/* Load More / Loading Indicator */}
+      {!loading && photos.length > 0 && (
+        <div className="flex flex-col items-center gap-4 py-8">
+          {loadingMore && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading more photos...</span>
+            </div>
+          )}
+          
+          {pagination.hasNextPage && !loadingMore && (
+            <button
+              onClick={loadMorePhotos}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              Load More Photos ({pagination.total - photos.length} remaining)
+            </button>
+          )}
+          
+          {!pagination.hasNextPage && photos.length > 0 && photos.length < pagination.total && (
+            <div className="text-sm text-gray-500">
+              All photos loaded ({pagination.total} total)
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Photo Preview Modal */}
       <PhotoPreviewModal
@@ -590,7 +653,7 @@ export default function PhotoGallery({
       {canSelect && userRole === 'USER' && selectedPhotos.size > 0 && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <div className="text-green-800 font-medium">
-            ✨ You've selected {selectedPhotos.size} photo
+            ✨ You&apos;ve selected {selectedPhotos.size} photo
             {selectedPhotos.size !== 1 ? 's' : ''}
           </div>
           <div className="text-green-600 text-sm mt-1">
