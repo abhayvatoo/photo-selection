@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Upload, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useSocket } from '@/hooks/useSocket';
 import { useToast } from '@/hooks/useToast';
-import { csrfPostFormData } from '@/lib/csrf-fetch';
+import { checkPhotoLimit, uploadPhotos } from '@/lib/actions/photo-actions';
 
 interface PhotoUploadProps {
   workspaceId: string;
@@ -36,27 +36,16 @@ export default function PhotoUpload({
     limit: number;
   } | null>(null);
 
-  const checkPhotoLimit = useCallback(async () => {
-    if (!session?.user?.id || !workspaceId) return;
-
-    try {
-      const response = await fetch(
-        `/api/user/photo-limit?workspaceId=${workspaceId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setPhotoLimit(data);
-      }
-    } catch (error) {
-      console.error('Error checking photo limit:', error);
-    }
-  }, [session?.user?.id, workspaceId]);
-
+  // Check photo limit when component mounts or dependencies change
   useEffect(() => {
     if (session?.user?.id && workspaceId) {
-      checkPhotoLimit();
+      checkPhotoLimit(workspaceId)
+        .then(setPhotoLimit)
+        .catch((error) => {
+          console.error('Error checking photo limit:', error);
+        });
     }
-  }, [session?.user?.id, workspaceId, checkPhotoLimit]);
+  }, [session?.user?.id, workspaceId]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -98,26 +87,13 @@ export default function PhotoUpload({
     setUploadProgress({ current: 0, total: imageFiles.length });
 
     try {
-      let uploadedCount = 0;
-      for (let i = 0; i < imageFiles.length; i++) {
-        const file = imageFiles[i];
-        setUploadProgress({ current: i + 1, total: imageFiles.length });
+      // Use Server Action to upload all files at once
+      const result = await uploadPhotos({
+        workspaceId,
+        files: imageFiles,
+      });
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('userId', session.user.id);
-        formData.append('workspaceId', workspaceId);
-
-        // Use CSRF-aware fetch wrapper (handles token and retry automatically)
-        const response = await csrfPostFormData('/api/photos/upload', formData);
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Upload failed');
-        }
-
-        uploadedCount++;
-      }
+      setUploadProgress({ current: imageFiles.length, total: imageFiles.length });
 
       // Reset the input
       if (fileInputRef.current) {
@@ -132,21 +108,22 @@ export default function PhotoUpload({
         });
       }
 
-      // Show success toast and refresh page to show new photos
+      // Show success toast
+      const uploadedCount = result.photos.length;
       const photoWord = uploadedCount === 1 ? 'photo' : 'photos';
       showToast(
         `Successfully uploaded ${uploadedCount} ${photoWord}!`,
         'success'
       );
 
-      // Call onUpload callback if provided, otherwise refresh the page
+      // Refresh photo limit after successful upload
+      checkPhotoLimit(workspaceId)
+        .then(setPhotoLimit)
+        .catch(console.error);
+
+      // Call onUpload callback if provided
       if (onUpload) {
         onUpload();
-      } else {
-        // Refresh page after a brief delay to show the toast first
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
       }
     } catch (error) {
       console.error('Upload failed:', error);

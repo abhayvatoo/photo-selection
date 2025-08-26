@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { UserRole } from '@prisma/client';
 import { AlertTriangle } from 'lucide-react';
-import { csrfPostJSON } from '@/lib/csrf-fetch';
+import { checkUserLimit, createInvitation } from '@/lib/actions/invitation-actions';
 
 interface InviteUsersProps {
   userRole: UserRole;
@@ -27,27 +27,16 @@ export default function InviteUsers({
     limit: number;
   } | null>(null);
 
-  const checkUserLimit = useCallback(async () => {
-    if (!workspaceId) return;
-
-    try {
-      const response = await fetch(
-        `/api/user/user-limit?workspaceId=${workspaceId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUserLimit(data);
-      }
-    } catch (error) {
-      console.error('Error checking user limit:', error);
-    }
-  }, [workspaceId]);
-
+  // Check user limit when component mounts or workspaceId changes
   useEffect(() => {
     if (workspaceId) {
-      checkUserLimit();
+      checkUserLimit(workspaceId)
+        .then(setUserLimit)
+        .catch((error) => {
+          console.error('Error checking user limit:', error);
+        });
     }
-  }, [workspaceId, checkUserLimit]);
+  }, [workspaceId]);
 
   const canInvite =
     userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;
@@ -85,7 +74,7 @@ export default function InviteUsers({
     setMessage(null);
 
     try {
-      const response = await csrfPostJSON('/api/invitations/create', {
+      const result = await createInvitation({
         email,
         role,
         workspaceId:
@@ -94,25 +83,23 @@ export default function InviteUsers({
             : undefined,
       });
 
-      const data = await response.json();
+      setMessage({
+        type: 'success',
+        text: `Invitation sent to ${email}! They will receive an email with instructions to join.`,
+      });
+      setEmail('');
+      setRole(UserRole.USER);
 
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: `Invitation sent to ${email}! ${data.invitation.invitationUrl ? `Development URL: ${data.invitation.invitationUrl}` : ''}`,
-        });
-        setEmail('');
-        setRole(UserRole.USER);
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Failed to send invitation',
-        });
+      // Refresh user limit after successful invitation
+      if (workspaceId) {
+        checkUserLimit(workspaceId)
+          .then(setUserLimit)
+          .catch(console.error);
       }
     } catch (error) {
       setMessage({
         type: 'error',
-        text: 'Failed to send invitation',
+        text: error instanceof Error ? error.message : 'Failed to send invitation',
       });
     } finally {
       setLoading(false);

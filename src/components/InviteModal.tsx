@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { X, UserPlus, AlertTriangle } from 'lucide-react';
 import { UserRole } from '@prisma/client';
-import { csrfPostJSON } from '@/lib/csrf-fetch';
+import { checkUserLimit, createInvitation } from '@/lib/actions/invitation-actions';
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -33,27 +33,16 @@ export default function InviteModal({
     limit: number;
   } | null>(null);
 
-  const checkUserLimit = useCallback(async () => {
-    if (!workspaceId) return;
-
-    try {
-      const response = await fetch(
-        `/api/user/user-limit?workspaceId=${workspaceId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUserLimit(data);
-      }
-    } catch (error) {
-      console.error('Error checking user limit:', error);
-    }
-  }, [workspaceId]);
-
+  // Check user limit when modal opens or workspaceId changes
   useEffect(() => {
     if (isOpen && workspaceId) {
-      checkUserLimit();
+      checkUserLimit(workspaceId)
+        .then(setUserLimit)
+        .catch((error) => {
+          console.error('Error checking user limit:', error);
+        });
     }
-  }, [isOpen, workspaceId, checkUserLimit]);
+  }, [isOpen, workspaceId]);
 
   const canInvite =
     userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;
@@ -91,7 +80,7 @@ export default function InviteModal({
     setMessage(null);
 
     try {
-      const response = await csrfPostJSON('/api/invitations/create', {
+      const result = await createInvitation({
         email,
         role,
         workspaceId:
@@ -100,31 +89,29 @@ export default function InviteModal({
             : undefined,
       });
 
-      const data = await response.json();
+      setMessage({
+        type: 'success',
+        text: `Invitation sent to ${email}! They will receive an email with instructions to join.`,
+      });
+      setEmail('');
+      setRole(UserRole.USER);
 
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: `Invitation sent to ${email}! ${data.invitation.invitationUrl ? `Development URL: ${data.invitation.invitationUrl}` : ''}`,
-        });
-        setEmail('');
-        setRole(UserRole.USER);
-
-        // Auto-close modal after success
-        setTimeout(() => {
-          onClose();
-          setMessage(null);
-        }, 2000);
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Failed to send invitation',
-        });
+      // Refresh user limit after successful invitation
+      if (workspaceId) {
+        checkUserLimit(workspaceId)
+          .then(setUserLimit)
+          .catch(console.error);
       }
+
+      // Auto-close modal after success
+      setTimeout(() => {
+        onClose();
+        setMessage(null);
+      }, 2000);
     } catch (error) {
       setMessage({
         type: 'error',
-        text: 'Failed to send invitation',
+        text: error instanceof Error ? error.message : 'Failed to send invitation',
       });
     } finally {
       setLoading(false);
