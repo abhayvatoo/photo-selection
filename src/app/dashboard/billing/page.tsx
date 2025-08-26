@@ -265,7 +265,8 @@ export default function BillingPage() {
             No Active Subscription
           </h2>
           <p className="text-gray-600 mb-6">
-            You don&apos;t have an active subscription. Choose a plan to get started.
+            You don&apos;t have an active subscription. Choose a plan to get
+            started.
           </p>
           <button
             onClick={() => router.push('/pricing')}

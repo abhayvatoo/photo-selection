@@ -476,8 +476,8 @@ export default async function DashboardPage() {
                       No Subscription Found
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      You don&apos;t have an active subscription yet. Start with our
-                      free Starter plan or upgrade to unlock more features.
+                      You don&apos;t have an active subscription yet. Start with
+                      our free Starter plan or upgrade to unlock more features.
                     </p>
                     <div className="space-y-3">
                       <Link

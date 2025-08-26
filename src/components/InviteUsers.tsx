@@ -133,7 +133,10 @@ export default function InviteUsers({
             <div>
               <p className="text-sm font-medium text-orange-800">
                 User limit reached ({userLimit.limit} users).
-                <a href="/pricing" className="underline hover:no-underline ml-1">
+                <a
+                  href="/pricing"
+                  className="underline hover:no-underline ml-1"
+                >
                   Upgrade plan
                 </a>
               </p>
@@ -176,7 +179,9 @@ export default function InviteUsers({
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={loading || !email || (userLimit ? !userLimit.allowed : false)}
+            disabled={
+              loading || !email || (userLimit ? !userLimit.allowed : false)
+            }
             className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {loading ? 'Sending...' : 'Send Invite'}

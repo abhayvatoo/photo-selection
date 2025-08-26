@@ -29,10 +29,12 @@ export const commonSchemas = {
 
   // File validation schema
   fileUpload: z.object({
-    workspaceId: z.string().regex(
-      /^c[a-z0-9]{24}$/,
-      'Invalid workspace ID format - must be a valid CUID'
-    ),
+    workspaceId: z
+      .string()
+      .regex(
+        /^c[a-z0-9]{24}$/,
+        'Invalid workspace ID format - must be a valid CUID'
+      ),
   }),
 
   // User role schema

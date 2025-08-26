@@ -25,7 +25,11 @@ export class CSRFProtection {
     const expires = Date.now() + this.TOKEN_EXPIRY;
 
     csrfTokenStore.set(sessionKey, { token, expires });
-    console.log('[CSRF DEBUG] Token stored:', { sessionKey, token: token.substring(0, 8) + '...', storeSize: csrfTokenStore.size });
+    console.log('[CSRF DEBUG] Token stored:', {
+      sessionKey,
+      token: token.substring(0, 8) + '...',
+      storeSize: csrfTokenStore.size,
+    });
 
     // Clean up expired tokens
     this.cleanupExpiredTokens();
@@ -86,20 +90,29 @@ export class CSRFProtection {
     }
 
     const sessionKey = this.getSessionKey(session);
-    console.log('[CSRF DEBUG] Getting token for session:', { 
-      sessionId: session.user.id, 
-      sessionKey, 
-      email: session.user.email 
+    console.log('[CSRF DEBUG] Getting token for session:', {
+      sessionId: session.user.id,
+      sessionKey,
+      email: session.user.email,
     });
     const stored = csrfTokenStore.get(sessionKey);
 
     if (stored && Date.now() < stored.expires) {
-      console.log('[CSRF DEBUG] Returning existing valid token for session:', { sessionKey, token: stored.token.substring(0, 8) + '...', expires: new Date(stored.expires).toISOString() });
+      console.log('[CSRF DEBUG] Returning existing valid token for session:', {
+        sessionKey,
+        token: stored.token.substring(0, 8) + '...',
+        expires: new Date(stored.expires).toISOString(),
+      });
       return stored.token;
     }
 
     // Generate new token if none exists or expired
-    console.log('[CSRF DEBUG] Creating new token for session (reason: ' + (stored ? 'expired' : 'not found') + '):', sessionKey);
+    console.log(
+      '[CSRF DEBUG] Creating new token for session (reason: ' +
+        (stored ? 'expired' : 'not found') +
+        '):',
+      sessionKey
+    );
     return await this.createToken(sessionKey);
   }
 
@@ -108,12 +121,15 @@ export class CSRFProtection {
    */
   private static debugTokenStore(): void {
     const entries = Array.from(csrfTokenStore.entries());
-    console.log('[CSRF DEBUG] Current token store state:', entries.map(([key, data]) => ({
-      sessionKey: key,
-      token: data.token.substring(0, 8) + '...',
-      expires: new Date(data.expires).toISOString(),
-      expired: Date.now() > data.expires
-    })));
+    console.log(
+      '[CSRF DEBUG] Current token store state:',
+      entries.map(([key, data]) => ({
+        sessionKey: key,
+        token: data.token.substring(0, 8) + '...',
+        expires: new Date(data.expires).toISOString(),
+        expired: Date.now() > data.expires,
+      }))
+    );
   }
 
   /**
@@ -125,13 +141,21 @@ export class CSRFProtection {
     let cleanedCount = 0;
     for (const [sessionId, data] of entries) {
       if (now > data.expires) {
-        console.log('[CSRF DEBUG] Cleaning up expired token for session:', sessionId);
+        console.log(
+          '[CSRF DEBUG] Cleaning up expired token for session:',
+          sessionId
+        );
         csrfTokenStore.delete(sessionId);
         cleanedCount++;
       }
     }
     if (cleanedCount > 0) {
-      console.log('[CSRF DEBUG] Cleaned up', cleanedCount, 'expired tokens, store size now:', csrfTokenStore.size);
+      console.log(
+        '[CSRF DEBUG] Cleaned up',
+        cleanedCount,
+        'expired tokens, store size now:',
+        csrfTokenStore.size
+      );
     }
   }
 
@@ -165,7 +189,10 @@ export class CSRFProtection {
         if (contentType?.includes('application/json')) {
           const body = await request.clone().json();
           tokenFromBody = body.csrfToken;
-        } else if (contentType?.includes('application/x-www-form-urlencoded') || contentType?.includes('multipart/form-data')) {
+        } else if (
+          contentType?.includes('application/x-www-form-urlencoded') ||
+          contentType?.includes('multipart/form-data')
+        ) {
           const formData = await request.clone().formData();
           tokenFromBody = formData.get('csrfToken') as string;
         }
@@ -176,13 +203,13 @@ export class CSRFProtection {
 
     const providedToken = tokenFromHeader || tokenFromBody;
     const sessionKey = this.getSessionKey(session);
-    console.log('[CSRF DEBUG] Request validation:', { 
+    console.log('[CSRF DEBUG] Request validation:', {
       sessionId: session.user.id,
       sessionKey,
       email: session.user.email,
       tokenFromHeader: tokenFromHeader?.substring(0, 8) + '...' || 'none',
       tokenFromBody: tokenFromBody?.substring(0, 8) + '...' || 'none',
-      providedToken: providedToken?.substring(0, 8) + '...' || 'none'
+      providedToken: providedToken?.substring(0, 8) + '...' || 'none',
     });
 
     // Debug current token store state
@@ -240,7 +267,9 @@ export async function getCSRFToken(
   console.log('[CSRF DEBUG] Token endpoint called');
   try {
     const token = await CSRFProtection.getTokenForSession(request);
-    console.log('[CSRF DEBUG] Token endpoint result:', { token: token?.substring(0, 8) + '...' || 'null' });
+    console.log('[CSRF DEBUG] Token endpoint result:', {
+      token: token?.substring(0, 8) + '...' || 'null',
+    });
 
     if (!token) {
       console.log('[CSRF DEBUG] Token endpoint returning 401 - no session');

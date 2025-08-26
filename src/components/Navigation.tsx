@@ -3,16 +3,16 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Camera, 
-  Menu, 
-  X, 
-  ChevronDown, 
-  User, 
-  Settings, 
+import {
+  Camera,
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  Settings,
   LogOut,
   Bell,
-  Search
+  Search,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
@@ -27,10 +27,16 @@ export function Navigation() {
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -61,7 +67,8 @@ export function Navigation() {
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
   // Helper function to check if link is active
-  const isActiveLink = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  const isActiveLink = (href: string) =>
+    pathname === href || pathname.startsWith(href + '/');
 
   if (status === 'loading') {
     return (
@@ -115,7 +122,7 @@ export function Navigation() {
                   )}
                 </Link>
               ))}
-              
+
               <div className="ml-4 pl-4 border-l border-gray-200">
                 <Link
                   href="/auth/signin"
@@ -144,10 +151,13 @@ export function Navigation() {
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-            
+            <div
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+
             {/* Mobile Menu Drawer */}
-            <div 
+            <div
               ref={mobileMenuRef}
               className={`fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 max-w-[85vw] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300 ease-in-out ${
                 isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
@@ -174,7 +184,7 @@ export function Navigation() {
                     </Link>
                   ))}
                 </div>
-                
+
                 <div className="border-t border-gray-200 p-6">
                   <Link
                     href="/auth/signin"
@@ -252,7 +262,9 @@ export function Navigation() {
                   <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-sm font-semibold text-white shadow-lg">
                     {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                   </div>
-                  <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-600 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
                 {/* User Dropdown Menu */}
@@ -266,7 +278,7 @@ export function Navigation() {
                         {user.role?.toLowerCase().replace('_', ' ')}
                       </p>
                     </div>
-                    
+
                     <div className="py-2">
                       <button
                         onClick={() => {
@@ -278,7 +290,7 @@ export function Navigation() {
                         <User className="h-4 w-4" />
                         <span>Profile</span>
                       </button>
-                      
+
                       <button
                         onClick={() => {
                           // Future: Navigate to settings page
@@ -290,7 +302,7 @@ export function Navigation() {
                         <span>Settings</span>
                       </button>
                     </div>
-                    
+
                     <div className="border-t border-gray-100 pt-2">
                       <button
                         onClick={() => {
@@ -327,10 +339,13 @@ export function Navigation() {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
           {/* Mobile Menu Drawer */}
-          <div 
+          <div
             ref={mobileMenuRef}
             className={`fixed top-16 right-0 h-[calc(100vh-4rem)] w-80 max-w-[85vw] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300 ease-in-out ${
               isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
@@ -375,7 +390,7 @@ export function Navigation() {
                   </Link>
                 ))}
               </div>
-              
+
               {/* Footer Actions */}
               <div className="border-t border-gray-200 p-6 space-y-3">
                 <button
@@ -388,7 +403,7 @@ export function Navigation() {
                   <User className="h-5 w-5" />
                   <span className="text-base font-medium">Profile</span>
                 </button>
-                
+
                 <button
                   onClick={() => {
                     // Future: Navigate to settings

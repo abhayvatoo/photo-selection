@@ -67,9 +67,12 @@ export default function PricingSection({
     setLoading(planKey);
 
     try {
-      const response = await csrfPostJSON('/api/stripe/create-checkout-session', {
-        planType: planKey
-      });
+      const response = await csrfPostJSON(
+        '/api/stripe/create-checkout-session',
+        {
+          planType: planKey,
+        }
+      );
 
       const data = await response.json();
 

@@ -104,9 +104,12 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
 
     setLoading(true);
     try {
-      const response = await csrfPatch(`/api/workspaces/${workspace.id}/status`, {
-        status: newStatus
-      });
+      const response = await csrfPatch(
+        `/api/workspaces/${workspace.id}/status`,
+        {
+          status: newStatus,
+        }
+      );
 
       if (response.ok) {
         showToast(
@@ -212,8 +215,8 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
     setLoading(true);
     try {
       const response = await csrfPatch(`/api/workspaces/${workspace.id}`, {
-        name, 
-        description
+        name,
+        description,
       });
 
       if (response.ok) {
@@ -238,7 +241,8 @@ export function WorkspaceMenu({ workspace, userRole }: WorkspaceMenuProps) {
     }
   };
 
-  const hasAdminPermissions = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+  const hasAdminPermissions =
+    userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
 
   return (
     <div className="relative">

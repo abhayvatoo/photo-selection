@@ -65,7 +65,9 @@ export default function PhotoGallery({
     pages: 0,
     hasNextPage: false,
   });
-  const [filterBy, setFilterBy] = useState<'all' | 'selected' | 'unselected'>('all');
+  const [filterBy, setFilterBy] = useState<'all' | 'selected' | 'unselected'>(
+    'all'
+  );
   const { showToast } = useToast();
 
   // Initialize Socket.io connection
@@ -102,12 +104,17 @@ export default function PhotoGallery({
 
     // Apply selection filter
     if (filterBy === 'selected') {
-      filtered = filtered.filter(photo =>
-        photo.selections.some(selection => selection.userId === session?.user?.id)
+      filtered = filtered.filter((photo) =>
+        photo.selections.some(
+          (selection) => selection.userId === session?.user?.id
+        )
       );
     } else if (filterBy === 'unselected') {
-      filtered = filtered.filter(photo =>
-        !photo.selections.some(selection => selection.userId === session?.user?.id)
+      filtered = filtered.filter(
+        (photo) =>
+          !photo.selections.some(
+            (selection) => selection.userId === session?.user?.id
+          )
       );
     }
 
@@ -117,47 +124,50 @@ export default function PhotoGallery({
   /**
    * Fetches photos for the workspace with pagination support
    */
-  const fetchPhotos = useCallback(async (page: number = 1, append: boolean = false) => {
-    try {
-      if (page === 1) {
-        setLoading(true);
-        setPhotos([]);
-      } else {
-        setLoadingMore(true);
+  const fetchPhotos = useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      try {
+        if (page === 1) {
+          setLoading(true);
+          setPhotos([]);
+        } else {
+          setLoadingMore(true);
+        }
+        setError(null);
+
+        const response = await fetch(
+          `/api/photos/workspace/${workspaceId}?page=${page}&limit=${pagination.limit}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch photos: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (append && page > 1) {
+          setPhotos((prev) => [...prev, ...(data.photos || [])]);
+        } else {
+          setPhotos(data.photos || []);
+        }
+
+        setPagination({
+          page: data.pagination.page,
+          limit: data.pagination.limit,
+          total: data.pagination.total,
+          pages: data.pagination.pages,
+          hasNextPage: data.pagination.page < data.pagination.pages,
+        });
+      } catch (err) {
+        console.error('Error fetching photos:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load photos');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-      setError(null);
-
-      const response = await fetch(
-        `/api/photos/workspace/${workspaceId}?page=${page}&limit=${pagination.limit}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch photos: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (append && page > 1) {
-        setPhotos(prev => [...prev, ...(data.photos || [])]);
-      } else {
-        setPhotos(data.photos || []);
-      }
-
-      setPagination({
-        page: data.pagination.page,
-        limit: data.pagination.limit,
-        total: data.pagination.total,
-        pages: data.pagination.pages,
-        hasNextPage: data.pagination.page < data.pagination.pages,
-      });
-    } catch (err) {
-      console.error('Error fetching photos:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load photos');
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [workspaceId, pagination.limit]);
+    },
+    [workspaceId, pagination.limit]
+  );
 
   // Load more photos
   const loadMorePhotos = useCallback(async () => {
@@ -270,7 +280,7 @@ export default function PhotoGallery({
         });
       }
 
-      const response = isSelected 
+      const response = isSelected
         ? await csrfDelete(`/api/photos/${photoId}/select`)
         : await csrfPostJSON(`/api/photos/${photoId}/select`, {});
 
@@ -330,31 +340,25 @@ export default function PhotoGallery({
     }
   };
 
+  const handleDeletePhoto = useCallback(async (photoId: number) => {
+    if (!confirm('Are you sure you want to delete this photo?')) {
+      return;
+    }
 
+    try {
+      const response = await csrfDelete(`/api/photos/${photoId}/delete`);
 
-  const handleDeletePhoto = useCallback(
-    async (photoId: number) => {
-      if (!confirm('Are you sure you want to delete this photo?')) {
-        return;
+      if (!response.ok) {
+        throw new Error('Failed to delete photo');
       }
 
-      try {
-        const response = await csrfDelete(`/api/photos/${photoId}/delete`);
-
-        if (!response.ok) {
-          throw new Error('Failed to delete photo');
-        }
-
-        setPhotos((prevPhotos) =>
-          prevPhotos.filter((photo) => photo.id !== photoId)
-        );
-      } catch (err) {
-        console.error('Error deleting photo:', err);
-      }
-    },
-    []
-  );
-
+      setPhotos((prevPhotos) =>
+        prevPhotos.filter((photo) => photo.id !== photoId)
+      );
+    } catch (err) {
+      console.error('Error deleting photo:', err);
+    }
+  }, []);
 
   /**
    * Handles photo preview modal
@@ -372,33 +376,30 @@ export default function PhotoGallery({
   /**
    * Handles photo download
    */
-  const handlePhotoDownload = useCallback(
-    async (photo: Photo) => {
-      try {
-        const response = await csrfPostJSON('/api/photos/download', { 
-          photoIds: [photo.id] 
-        });
+  const handlePhotoDownload = useCallback(async (photo: Photo) => {
+    try {
+      const response = await csrfPostJSON('/api/photos/download', {
+        photoIds: [photo.id],
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to download photo');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = photo.originalName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } catch (err) {
-        console.error('Error downloading photo:', err);
+      if (!response.ok) {
+        throw new Error('Failed to download photo');
       }
-    },
-    []
-  );
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = photo.originalName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading photo:', err);
+    }
+  }, []);
 
   /**
    * Handles photo selection for regular users
@@ -409,7 +410,10 @@ export default function PhotoGallery({
 
       setIsSelecting(true);
       try {
-        const response = await csrfPostJSON(`/api/photos/${photoId}/select`, {});
+        const response = await csrfPostJSON(
+          `/api/photos/${photoId}/select`,
+          {}
+        );
 
         if (!response.ok) {
           throw new Error('Failed to select photo');
@@ -513,11 +517,15 @@ export default function PhotoGallery({
             </div>
           </div>
         )}
-        
+
         <div className="text-center py-12">
-          <div className="text-gray-500 mb-4">🔍 No photos match your filter</div>
-          <button 
-            onClick={() => { setFilterBy('all'); }}
+          <div className="text-gray-500 mb-4">
+            🔍 No photos match your filter
+          </div>
+          <button
+            onClick={() => {
+              setFilterBy('all');
+            }}
             className="text-blue-600 hover:text-blue-700 text-sm"
           >
             Clear filter
@@ -550,7 +558,9 @@ export default function PhotoGallery({
       {/* Header with selection info and bulk controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          {loading ? 'Loading...' : (
+          {loading ? (
+            'Loading...'
+          ) : (
             <>
               {filteredPhotos.length} of {pagination.total} photos
               {selectedPhotos.size > 0 && ` • ${selectedPhotos.size} selected`}
@@ -559,7 +569,6 @@ export default function PhotoGallery({
         </div>
 
         <div className="flex items-center gap-2">
-
           {canSelect && photos.length > 0 && (
             <>
               <button
@@ -619,7 +628,7 @@ export default function PhotoGallery({
               <span>Loading more photos...</span>
             </div>
           )}
-          
+
           {pagination.hasNextPage && !loadingMore && (
             <button
               onClick={loadMorePhotos}
@@ -628,12 +637,14 @@ export default function PhotoGallery({
               Load More Photos ({pagination.total - photos.length} remaining)
             </button>
           )}
-          
-          {!pagination.hasNextPage && photos.length > 0 && photos.length < pagination.total && (
-            <div className="text-sm text-gray-500">
-              All photos loaded ({pagination.total} total)
-            </div>
-          )}
+
+          {!pagination.hasNextPage &&
+            photos.length > 0 &&
+            photos.length < pagination.total && (
+              <div className="text-sm text-gray-500">
+                All photos loaded ({pagination.total} total)
+              </div>
+            )}
         </div>
       )}
 

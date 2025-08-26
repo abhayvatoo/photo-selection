@@ -58,12 +58,13 @@ export default function UploadModal({
           </div>
 
           <div className="text-sm text-gray-600 mb-6">
-            Upload photos to <strong>{workspaceName}</strong> for clients to view and select.
+            Upload photos to <strong>{workspaceName}</strong> for clients to
+            view and select.
           </div>
 
           {/* Upload Component */}
-          <PhotoUpload 
-            workspaceId={workspaceId} 
+          <PhotoUpload
+            workspaceId={workspaceId}
             onUpload={handleUploadComplete}
           />
 

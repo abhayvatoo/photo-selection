@@ -204,8 +204,8 @@ export default function InvitePage() {
         ) : session.user.email !== invitation.email ? (
           <div className="text-center">
             <p className="text-red-600 mb-4">
-              You&apos;re signed in as {session.user.email}, but this invitation is
-              for {invitation.email}
+              You&apos;re signed in as {session.user.email}, but this invitation
+              is for {invitation.email}
             </p>
             <button
               onClick={() => signIn('email', { email: invitation.email })}

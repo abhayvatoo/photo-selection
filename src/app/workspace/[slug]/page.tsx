@@ -2,11 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/db';
-import {
-  ArrowLeft,
-  Users,
-  Calendar,
-} from 'lucide-react';
+import { ArrowLeft, Users, Calendar } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
@@ -101,7 +97,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   className="flex items-center text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors mr-4"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  <span className="font-medium hidden sm:inline">Back to Workspaces</span>
+                  <span className="font-medium hidden sm:inline">
+                    Back to Workspaces
+                  </span>
                   <span className="font-medium sm:hidden">Back</span>
                 </Link>
                 <div className="w-px h-6 bg-gray-300 mr-4"></div>
@@ -130,7 +128,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   {workspace.name}
                 </h2>
                 {workspace.description && (
-                  <p className="text-gray-600 text-sm mb-2">{workspace.description}</p>
+                  <p className="text-gray-600 text-sm mb-2">
+                    {workspace.description}
+                  </p>
                 )}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                   <div className="flex items-center">
@@ -143,7 +143,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   </div>
                 </div>
               </div>
-              
+
               {/* Quick stats and settings for larger screens */}
               <div className="flex items-center gap-4">
                 <div className="hidden sm:block text-right">
@@ -151,10 +151,14 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     {workspace.photos.length} Photos
                   </div>
                   <div className="text-xs text-gray-500">
-                    {workspace.photos.reduce((acc, photo) => acc + photo.selections.length, 0)} Selections
+                    {workspace.photos.reduce(
+                      (acc, photo) => acc + photo.selections.length,
+                      0
+                    )}{' '}
+                    Selections
                   </div>
                 </div>
-                
+
                 {/* Desktop Settings */}
                 <div className="hidden sm:block">
                   <WorkspaceSettings
@@ -165,7 +169,6 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
               </div>
             </div>
           </div>
-
 
           {/* Photos Section - Main Focus */}
           <div className="bg-white rounded-lg shadow-sm">
@@ -196,7 +199,6 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
               />
             </div>
           </div>
-
         </div>
       </div>{' '}
       {/* Close padding wrapper */}

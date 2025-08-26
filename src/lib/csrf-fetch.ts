@@ -24,7 +24,10 @@ async function fetchFreshCSRFToken(): Promise<string> {
  * 2. Retries once with fresh token if CSRF validation fails
  * 3. Works with both JSON and FormData payloads
  */
-export async function csrfFetch(url: string, options: CSRFFetchOptions = {}): Promise<Response> {
+export async function csrfFetch(
+  url: string,
+  options: CSRFFetchOptions = {}
+): Promise<Response> {
   // Skip CSRF for GET, HEAD, OPTIONS requests
   const method = (options.method || 'GET').toUpperCase();
   if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
@@ -40,12 +43,15 @@ export async function csrfFetch(url: string, options: CSRFFetchOptions = {}): Pr
   }
 
   // Helper function to add CSRF token to request
-  const addCSRFToRequest = (token: string, originalOptions: CSRFFetchOptions) => {
+  const addCSRFToRequest = (
+    token: string,
+    originalOptions: CSRFFetchOptions
+  ) => {
     const headers = new Headers(originalOptions.headers);
-    
+
     // Always add to header
     headers.set('x-csrf-token', token);
-    
+
     // Add to form data if it's a FormData body
     let body = originalOptions.body;
     if (body instanceof FormData) {
@@ -57,7 +63,7 @@ export async function csrfFetch(url: string, options: CSRFFetchOptions = {}): Pr
       newFormData.append('csrfToken', token);
       body = newFormData;
     }
-    
+
     return {
       ...originalOptions,
       headers,
@@ -74,20 +80,23 @@ export async function csrfFetch(url: string, options: CSRFFetchOptions = {}): Pr
     try {
       const errorData = await response.clone().json();
       if (errorData.code === 'CSRF_TOKEN_INVALID') {
-        console.log('CSRF token expired, refreshing and retrying...', { url, method });
-        
+        console.log('CSRF token expired, refreshing and retrying...', {
+          url,
+          method,
+        });
+
         // Get fresh token
         const freshToken = await fetchFreshCSRFToken();
-        
+
         // Retry with fresh token
         requestOptions = addCSRFToRequest(freshToken, options);
         response = await fetch(url, requestOptions);
-        
-        console.log('CSRF retry completed', { 
-          url, 
-          method, 
+
+        console.log('CSRF retry completed', {
+          url,
+          method,
           success: response.ok,
-          status: response.status 
+          status: response.status,
         });
       }
     } catch (parseError) {
@@ -102,7 +111,11 @@ export async function csrfFetch(url: string, options: CSRFFetchOptions = {}): Pr
 /**
  * Convenience wrapper for JSON POST requests
  */
-export async function csrfPostJSON(url: string, data: any, options: CSRFFetchOptions = {}): Promise<Response> {
+export async function csrfPostJSON(
+  url: string,
+  data: any,
+  options: CSRFFetchOptions = {}
+): Promise<Response> {
   return csrfFetch(url, {
     method: 'POST',
     headers: {
@@ -117,7 +130,11 @@ export async function csrfPostJSON(url: string, data: any, options: CSRFFetchOpt
 /**
  * Convenience wrapper for form data POST requests
  */
-export async function csrfPostFormData(url: string, formData: FormData, options: CSRFFetchOptions = {}): Promise<Response> {
+export async function csrfPostFormData(
+  url: string,
+  formData: FormData,
+  options: CSRFFetchOptions = {}
+): Promise<Response> {
   return csrfFetch(url, {
     method: 'POST',
     body: formData,
@@ -128,7 +145,10 @@ export async function csrfPostFormData(url: string, formData: FormData, options:
 /**
  * Convenience wrapper for DELETE requests
  */
-export async function csrfDelete(url: string, options: CSRFFetchOptions = {}): Promise<Response> {
+export async function csrfDelete(
+  url: string,
+  options: CSRFFetchOptions = {}
+): Promise<Response> {
   return csrfFetch(url, {
     method: 'DELETE',
     headers: {
@@ -142,7 +162,11 @@ export async function csrfDelete(url: string, options: CSRFFetchOptions = {}): P
 /**
  * Convenience wrapper for PATCH requests
  */
-export async function csrfPatch(url: string, data: any, options: CSRFFetchOptions = {}): Promise<Response> {
+export async function csrfPatch(
+  url: string,
+  data: any,
+  options: CSRFFetchOptions = {}
+): Promise<Response> {
   return csrfFetch(url, {
     method: 'PATCH',
     headers: {

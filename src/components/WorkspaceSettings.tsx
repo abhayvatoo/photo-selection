@@ -32,7 +32,10 @@ interface WorkspaceSettingsProps {
   userRole: string;
 }
 
-export function WorkspaceSettings({ workspace, userRole }: WorkspaceSettingsProps) {
+export function WorkspaceSettings({
+  workspace,
+  userRole,
+}: WorkspaceSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -45,7 +48,8 @@ export function WorkspaceSettings({ workspace, userRole }: WorkspaceSettingsProp
   const router = useRouter();
   const { showToast } = useToast();
 
-  const hasAdminPermissions = userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
+  const hasAdminPermissions =
+    userRole === 'SUPER_ADMIN' || userRole === 'BUSINESS_OWNER';
 
   if (!hasAdminPermissions) {
     return null;
@@ -77,9 +81,12 @@ export function WorkspaceSettings({ workspace, userRole }: WorkspaceSettingsProp
 
     setLoading(true);
     try {
-      const response = await csrfPatch(`/api/workspaces/${workspace.id}/status`, {
-        status: newStatus
-      });
+      const response = await csrfPatch(
+        `/api/workspaces/${workspace.id}/status`,
+        {
+          status: newStatus,
+        }
+      );
 
       if (response.ok) {
         showToast(
@@ -169,8 +176,8 @@ export function WorkspaceSettings({ workspace, userRole }: WorkspaceSettingsProp
     setLoading(true);
     try {
       const response = await csrfPatch(`/api/workspaces/${workspace.id}`, {
-        name, 
-        description
+        name,
+        description,
       });
 
       if (response.ok) {

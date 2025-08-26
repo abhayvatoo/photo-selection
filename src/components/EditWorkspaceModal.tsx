@@ -55,9 +55,7 @@ export function EditWorkspaceModal({
               <h3 className="text-lg font-semibold text-gray-900">
                 Edit Workspace
               </h3>
-              <p className="text-sm text-gray-500">
-                Update workspace details
-              </p>
+              <p className="text-sm text-gray-500">Update workspace details</p>
             </div>
           </div>
           <button

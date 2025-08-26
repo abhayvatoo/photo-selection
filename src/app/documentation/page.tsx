@@ -103,9 +103,12 @@ export default function DocumentationPage() {
                       Creating Workspaces
                     </h4>
                     <ul className="text-gray-600 text-sm space-y-1">
-                      <li>• Click &quot;Create Workspace&quot; from your dashboard</li>
                       <li>
-                        • Enter a descriptive name (e.g., &quot;Smith Wedding 2024&quot;)
+                        • Click &quot;Create Workspace&quot; from your dashboard
+                      </li>
+                      <li>
+                        • Enter a descriptive name (e.g., &quot;Smith Wedding
+                        2024&quot;)
                       </li>
                       <li>• Add an optional description for context</li>
                       <li>• Your workspace is ready to use!</li>
@@ -295,8 +298,8 @@ export default function DocumentationPage() {
               Need More Help?
             </h2>
             <p className="text-gray-600 mb-6">
-              Can&apos;t find what you&apos;re looking for? Our support team is here to
-              help.
+              Can&apos;t find what you&apos;re looking for? Our support team is
+              here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

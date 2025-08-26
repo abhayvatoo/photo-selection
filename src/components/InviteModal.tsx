@@ -109,7 +109,7 @@ export default function InviteModal({
         });
         setEmail('');
         setRole(UserRole.USER);
-        
+
         // Auto-close modal after success
         setTimeout(() => {
           onClose();
@@ -174,7 +174,8 @@ export default function InviteModal({
           {!canInvite ? (
             <div className="text-center py-8">
               <div className="text-gray-500 text-sm">
-                You don&apos;t have permission to invite members to this workspace.
+                You don&apos;t have permission to invite members to this
+                workspace.
               </div>
             </div>
           ) : (
@@ -189,7 +190,10 @@ export default function InviteModal({
                         User limit reached ({userLimit.limit} users).
                       </p>
                       <p className="text-xs text-orange-700 mt-1">
-                        <a href="/pricing" className="underline hover:no-underline">
+                        <a
+                          href="/pricing"
+                          className="underline hover:no-underline"
+                        >
                           Upgrade your plan
                         </a>{' '}
                         to invite more users.
@@ -269,7 +273,11 @@ export default function InviteModal({
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || !email || (userLimit ? !userLimit.allowed : false)}
+                    disabled={
+                      loading ||
+                      !email ||
+                      (userLimit ? !userLimit.allowed : false)
+                    }
                     className="flex-1 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {loading ? 'Sending...' : 'Send Invite'}

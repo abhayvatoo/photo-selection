@@ -68,7 +68,6 @@ const PhotoCard = memo(function PhotoCard({
     onSelect(photo.id);
   }, [canSelect, isSelecting, onSelect, photo.id]);
 
-
   /**
    * Handles photo preview
    */
@@ -94,7 +93,6 @@ const PhotoCard = memo(function PhotoCard({
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-
       {/* Photo Image */}
       <div
         className="relative aspect-square cursor-pointer"

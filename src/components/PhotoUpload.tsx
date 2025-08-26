@@ -2,11 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import {
-  Upload,
-  AlertCircle,
-  AlertTriangle,
-} from 'lucide-react';
+import { Upload, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useSocket } from '@/hooks/useSocket';
 import { useToast } from '@/hooks/useToast';
 import { csrfPostFormData } from '@/lib/csrf-fetch';
@@ -62,7 +58,6 @@ export default function PhotoUpload({
     }
   };
 
-
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -94,12 +89,12 @@ export default function PhotoUpload({
 
     setIsUploading(true);
     setError(null);
-    
+
     // Filter to only image files
     const imageFiles = Array.from(files).filter((file) =>
       file.type.startsWith('image/')
     );
-    
+
     setUploadProgress({ current: 0, total: imageFiles.length });
 
     try {
@@ -120,7 +115,7 @@ export default function PhotoUpload({
           const errorData = await response.json();
           throw new Error(errorData.error || 'Upload failed');
         }
-        
+
         uploadedCount++;
       }
 
@@ -139,7 +134,10 @@ export default function PhotoUpload({
 
       // Show success toast and refresh page to show new photos
       const photoWord = uploadedCount === 1 ? 'photo' : 'photos';
-      showToast(`Successfully uploaded ${uploadedCount} ${photoWord}!`, 'success');
+      showToast(
+        `Successfully uploaded ${uploadedCount} ${photoWord}!`,
+        'success'
+      );
 
       // Call onUpload callback if provided, otherwise refresh the page
       if (onUpload) {
@@ -152,7 +150,8 @@ export default function PhotoUpload({
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Upload failed';
       setError(errorMessage);
       showToast(`Upload failed: ${errorMessage}`, 'error');
     } finally {
@@ -178,14 +177,14 @@ export default function PhotoUpload({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       // Create a mock event to reuse the handleFileSelect logic
       const mockEvent = {
-        target: { files }
+        target: { files },
       } as React.ChangeEvent<HTMLInputElement>;
-      
+
       handleFileSelect(mockEvent);
     }
   };
@@ -242,8 +241,13 @@ export default function PhotoUpload({
               : isDragOver
                 ? 'border-blue-500 bg-blue-100'
                 : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-        } ${(photoLimit && !photoLimit.allowed) ? 'opacity-50 cursor-not-allowed' : ''}`}
-        style={{ pointerEvents: (isUploading || !session?.user || (photoLimit && !photoLimit.allowed)) ? 'none' : 'auto' }}
+        } ${photoLimit && !photoLimit.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+        style={{
+          pointerEvents:
+            isUploading || !session?.user || (photoLimit && !photoLimit.allowed)
+              ? 'none'
+              : 'auto',
+        }}
       >
         <div className="flex items-center justify-center gap-3">
           {isUploading ? (
@@ -267,19 +271,29 @@ export default function PhotoUpload({
             <>
               <AlertCircle className="w-5 h-5 text-red-500" />
               <div className="text-left">
-                <p className="text-red-600 font-medium text-sm">Upload failed</p>
+                <p className="text-red-600 font-medium text-sm">
+                  Upload failed
+                </p>
                 <p className="text-xs text-red-600">{error}</p>
               </div>
             </>
           ) : (
             <>
-              <Upload className={`w-5 h-5 ${isDragOver ? 'text-blue-600' : 'text-gray-400'}`} />
+              <Upload
+                className={`w-5 h-5 ${isDragOver ? 'text-blue-600' : 'text-gray-400'}`}
+              />
               <div className="text-left">
-                <p className={`font-medium text-sm ${isDragOver ? 'text-blue-700' : 'text-gray-700'}`}>
+                <p
+                  className={`font-medium text-sm ${isDragOver ? 'text-blue-700' : 'text-gray-700'}`}
+                >
                   {isDragOver ? 'Drop Photos Here' : 'Upload Photos'}
                 </p>
-                <p className={`text-xs ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`}>
-                  {isDragOver ? 'Release to upload' : 'JPG, PNG • Multiple files • Drag & drop'}
+                <p
+                  className={`text-xs ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`}
+                >
+                  {isDragOver
+                    ? 'Release to upload'
+                    : 'JPG, PNG • Multiple files • Drag & drop'}
                 </p>
               </div>
             </>

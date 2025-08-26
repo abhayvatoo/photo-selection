@@ -192,9 +192,9 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  &quot;PhotoSelect completely transformed my workflow. What used to
-                  take me 3-4 hours of back-and-forth emails now takes 15
-                  minutes. My clients love how easy it is to select their
+                  &quot;PhotoSelect completely transformed my workflow. What
+                  used to take me 3-4 hours of back-and-forth emails now takes
+                  15 minutes. My clients love how easy it is to select their
                   favorites!&quot;
                 </p>
                 <div className="flex items-center">
@@ -278,9 +278,10 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  &quot;My clients used to take weeks to get back to me with their
-                  selections. Now they&apos;re done within 24 hours! The real-time
-                  notifications keep everyone engaged and excited.&quot;
+                  &quot;My clients used to take weeks to get back to me with
+                  their selections. Now they&apos;re done within 24 hours! The
+                  real-time notifications keep everyone engaged and
+                  excited.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
