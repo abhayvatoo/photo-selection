@@ -14,7 +14,7 @@ export default function Unauthorized() {
           Access Denied
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          You don't have permission to access this resource
+          You don&apos;t have permission to access this resource
         </p>
       </div>
 
@@ -22,7 +22,7 @@ export default function Unauthorized() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-600">
-              This page requires specific permissions that your account doesn't
+              This page requires specific permissions that your account doesn&apos;t
               have.
             </p>
             <p className="text-sm text-gray-600">

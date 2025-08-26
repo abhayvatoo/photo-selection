@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { getInvitationByToken, acceptInvitation } from '@/lib/invitations';
@@ -29,13 +29,7 @@ export default function InvitePage() {
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (token) {
-      fetchInvitation();
-    }
-  }, [token]);
-
-  const fetchInvitation = async () => {
+  const fetchInvitation = useCallback(async () => {
     try {
       const response = await fetch(`/api/invitations/${token}`);
       if (response.ok) {
@@ -49,7 +43,13 @@ export default function InvitePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchInvitation();
+    }
+  }, [token, fetchInvitation]);
 
   const handleAccept = async () => {
     if (!session?.user) {

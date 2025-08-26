@@ -150,7 +150,7 @@ export default function PricingSection({
 
               <div className="mt-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  What's included:
+                  What&apos;s included:
                 </h4>
                 <ul className="space-y-3">
                   <li className="flex items-start">

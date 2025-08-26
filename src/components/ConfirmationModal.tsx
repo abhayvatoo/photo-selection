@@ -84,7 +84,7 @@ export function ConfirmationModal({
           {requiresTypedConfirmation && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type "{confirmationPhrase}" to confirm:
+                Type &quot;{confirmationPhrase}&quot; to confirm:
               </label>
               <input
                 type="text"

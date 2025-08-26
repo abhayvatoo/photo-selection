@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Plus, X, AlertTriangle } from 'lucide-react';
-import { checkWorkspaceLimit } from '@/lib/subscription';
 import { useToast } from '@/hooks/useToast';
 import { csrfPostJSON } from '@/lib/csrf-fetch';
 
@@ -23,13 +22,7 @@ export function CreateWorkspaceButton() {
   });
   const { showToast } = useToast();
 
-  useEffect(() => {
-    if (session?.user?.id && showModal) {
-      checkLimit();
-    }
-  }, [session?.user?.id, showModal]);
-
-  const checkLimit = async () => {
+  const checkLimit = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
@@ -41,7 +34,13 @@ export function CreateWorkspaceButton() {
     } catch (error) {
       console.error('Error checking workspace limit:', error);
     }
-  };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id && showModal) {
+      checkLimit();
+    }
+  }, [session?.user?.id, showModal, checkLimit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +131,7 @@ export function CreateWorkspaceButton() {
                       Workspace Limit Reached
                     </p>
                     <p className="text-sm text-orange-700 mt-1">
-                      You've reached your limit of {limitCheck.limit} workspace
+                      You&apos;ve reached your limit of {limitCheck.limit} workspace
                       {limitCheck.limit === 1 ? '' : 's'}.
                       <a
                         href="/pricing"

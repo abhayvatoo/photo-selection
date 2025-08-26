@@ -223,7 +223,7 @@ export default async function HomePage() {
                 <p className="text-gray-700 mb-6 leading-relaxed">
                   &quot;The professional presentation has elevated my brand
                   significantly. Clients are impressed before they even see
-                  their photos. I've booked 6 new weddings just from referrals
+                  their photos. I&apos;ve booked 6 new weddings just from referrals
                   this month!&quot;
                 </p>
                 <div className="flex items-center">
@@ -307,9 +307,9 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  "The ROI was immediate. I raised my prices 30% because the
+                  &quot;The ROI was immediate. I raised my prices 30% because the
                   professional delivery experience justifies premium pricing.
-                  Best investment I've made for my business."
+                  Best investment I&apos;ve made for my business.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
@@ -335,9 +335,9 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed">
-                  "Setup took literally 5 minutes. Within a week, I had my first
+                  &quot;Setup took literally 5 minutes. Within a week, I had my first
                   client using it and they were blown away. The learning curve
-                  is zero - it just works perfectly."
+                  is zero - it just works perfectly.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">

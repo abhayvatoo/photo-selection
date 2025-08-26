@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UserRole } from '@prisma/client';
 import { AlertTriangle } from 'lucide-react';
 import { csrfPostJSON } from '@/lib/csrf-fetch';
@@ -27,13 +27,7 @@ export default function InviteUsers({
     limit: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (workspaceId) {
-      checkUserLimit();
-    }
-  }, [workspaceId]);
-
-  const checkUserLimit = async () => {
+  const checkUserLimit = useCallback(async () => {
     if (!workspaceId) return;
 
     try {
@@ -47,7 +41,13 @@ export default function InviteUsers({
     } catch (error) {
       console.error('Error checking user limit:', error);
     }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (workspaceId) {
+      checkUserLimit();
+    }
+  }, [workspaceId, checkUserLimit]);
 
   const canInvite =
     userRole === UserRole.SUPER_ADMIN || userRole === UserRole.BUSINESS_OWNER;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Upload, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useSocket } from '@/hooks/useSocket';
@@ -36,13 +36,7 @@ export default function PhotoUpload({
     limit: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (session?.user?.id && workspaceId) {
-      checkPhotoLimit();
-    }
-  }, [session?.user?.id, workspaceId]);
-
-  const checkPhotoLimit = async () => {
+  const checkPhotoLimit = useCallback(async () => {
     if (!session?.user?.id || !workspaceId) return;
 
     try {
@@ -56,7 +50,13 @@ export default function PhotoUpload({
     } catch (error) {
       console.error('Error checking photo limit:', error);
     }
-  };
+  }, [session?.user?.id, workspaceId]);
+
+  useEffect(() => {
+    if (session?.user?.id && workspaceId) {
+      checkPhotoLimit();
+    }
+  }, [session?.user?.id, workspaceId, checkPhotoLimit]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -201,7 +201,7 @@ export default function PhotoUpload({
                 Photo Limit Reached
               </p>
               <p className="text-sm text-orange-700 mt-1">
-                You've reached your limit of {photoLimit.limit} photos in this
+                You&apos;ve reached your limit of {photoLimit.limit} photos in this
                 workspace.
                 <a
                   href="/pricing"

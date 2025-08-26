@@ -60,7 +60,7 @@ export function DuplicateWorkspaceModal({
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <p className="text-gray-700 mb-4">
-              Create a copy of "{workspaceName}" with the same settings and
+              Create a copy of &quot;{workspaceName}&quot; with the same settings and
               structure.
             </p>
 

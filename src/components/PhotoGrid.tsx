@@ -86,11 +86,11 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
           </h3>
         </div>
         <p className="text-blue-700 mb-4">
-          To select photos, please choose your identity from the "Select Your
-          Identity" section above.
+          To select photos, please choose your identity from the &quot;Select Your
+          Identity&quot; section above.
         </p>
         <p className="text-sm text-blue-600">
-          Once selected, you'll see select buttons on each photo to mark your
+          Once selected, you&apos;ll see select buttons on each photo to mark your
           choices.
         </p>
       </div>
@@ -219,7 +219,7 @@ export default function PhotoGrid({ photos, currentUser }: PhotoGridProps) {
       {!state.hasMorePhotos && photos.length > 0 && (
         <div className="text-center py-8">
           <div className="text-gray-500 text-sm">
-            🎉 You've reached the end! No more photos to load.
+            🎉 You&apos;ve reached the end! No more photos to load.
           </div>
         </div>
       )}
